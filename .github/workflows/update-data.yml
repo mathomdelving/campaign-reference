@@ -1,0 +1,66 @@
+name: Update FEC Campaign Finance Data
+
+on:
+  # Daily update at 6 AM ET (11 AM UTC)
+  schedule:
+    - cron: '0 11 * * *'
+
+  # Intensive updates during filing periods (every 2 hours on days 13-17 of filing months)
+  # Filing months: January, April, July, October
+  schedule:
+    - cron: '0 */2 13-17 1,4,7,10 *'
+
+  # Manual trigger option
+  workflow_dispatch:
+
+jobs:
+  update-fec-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Fetch FEC data
+        env:
+          FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
+        run: |
+          python fetch_fec_data.py
+
+      - name: Load data to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python load_to_supabase.py
+
+      - name: Log completion
+        run: |
+          echo "Data update completed at $(date)"
+          echo "Candidates file size: $(du -h candidates_2026.json | cut -f1)"
+          echo "Financials file size: $(du -h financials_2026.json | cut -f1)"
+
+      - name: Upload artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-logs
+          path: |
+            progress.json
+            *.log
+          retention-days: 7
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::FEC data update failed. Check the logs for details."

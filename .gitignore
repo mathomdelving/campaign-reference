@@ -1,0 +1,48 @@
+# Environment variables (IMPORTANT: Never commit these!)
+.env
+frontend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Data files (large files - don't commit to GitHub)
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+
+# Logs
+*.log
+progress.json
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Node modules (frontend has its own .gitignore for this)
+node_modules/
+
+# Build outputs
+dist/
+build/

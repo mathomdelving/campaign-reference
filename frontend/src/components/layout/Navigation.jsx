@@ -28,10 +28,7 @@ export function Navigation() {
           {/* Logo/Title */}
           <Link to="/" className="flex items-center gap-2">
             <div className="text-2xl font-bold text-rb-yellow">
-              Political Pole
-            </div>
-            <div className="hidden sm:block text-sm text-gray-300 font-normal">
-              FEC 2026 Dashboard
+              Campaign Reference
             </div>
           </Link>
 

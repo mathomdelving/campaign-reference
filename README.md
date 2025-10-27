@@ -4,7 +4,7 @@
 
 Real-time FEC data visualization with automated daily updates.
 
-🔗 **Live Site:** [https://campaign-reference-five.vercel.app](https://campaign-reference-five.vercel.app)
+🔗 **Live Site:** [https://campaign-reference.com](https://campaign-reference.com)
 📊 **Repository:** [https://github.com/mathomdelving/campaign-reference](https://github.com/mathomdelving/campaign-reference)
 
 ---
@@ -133,6 +133,7 @@ campaign-reference/
 
 ### Deployment & Automation
 - **Hosting:** Vercel (Free tier)
+- **Domain:** campaign-reference.com (via Squarespace Domains)
 - **CI/CD:** GitHub Actions
 - **Data Updates:** Automated daily + filing period intensive updates
 
@@ -153,8 +154,9 @@ campaign-reference/
 
 **✅ Phase 5: Complete**
 - Vercel deployment
+- Custom domain: campaign-reference.com
 - Automatic deployments on push
-- Live at campaign-reference-five.vercel.app
+- Live in production with SSL/HTTPS
 
 **🎯 Current Focus:**
 - Monitoring automated data updates

@@ -3,7 +3,7 @@
 **Last Updated**: October 26, 2025
 **Status**: ✅ Live in Production
 
-🔗 **Live Site**: [https://campaign-reference-five.vercel.app](https://campaign-reference-five.vercel.app)
+🔗 **Live Site**: [https://campaign-reference.com](https://campaign-reference.com)
 📊 **Repository**: [https://github.com/mathomdelving/campaign-reference](https://github.com/mathomdelving/campaign-reference)
 
 ## Overview
@@ -56,9 +56,11 @@ Campaign Reference is a React-based dashboard visualizing 2026 House and Senate 
 
 ### ✅ Vercel Deployment (Phase 5 Complete)
 - **Hosting**: Vercel Free Tier
-- **URL**: campaign-reference-five.vercel.app
+- **Domain**: campaign-reference.com (via Squarespace Domains)
+- **URL**: [https://campaign-reference.com](https://campaign-reference.com)
 - **Auto-Deploy**: On every push to `main` branch
 - **Build Time**: ~1-2 minutes
+- **SSL/HTTPS**: Automatic via Vercel
 - **Configuration**: `vercel.json` with Root Directory set to `frontend`
 
 ## Technical Stack
@@ -310,7 +312,7 @@ gh run view --log
 ✅ Vercel deployment successful
 ✅ Automated daily data updates
 
-**Status**: ✅ Live in Production at [campaign-reference-five.vercel.app](https://campaign-reference-five.vercel.app) 🚀
+**Status**: ✅ Live in Production at [campaign-reference.com](https://campaign-reference.com) 🚀
 
 **Branding**: Campaign Reference (formerly Political Pole)
 **Version**: 1.0.0

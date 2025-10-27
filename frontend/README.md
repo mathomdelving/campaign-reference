@@ -2,7 +2,7 @@
 
 React + Vite frontend for the Campaign Reference FEC dashboard.
 
-🔗 **Live Site:** [https://campaign-reference-five.vercel.app](https://campaign-reference-five.vercel.app)
+🔗 **Live Site:** [https://campaign-reference.com](https://campaign-reference.com)
 
 ---
 
@@ -183,7 +183,8 @@ colors: {
 - Automatic deployments on git push to `main`
 - Root Directory set to `frontend` in Vercel settings
 - Environment variables configured in Vercel dashboard
-- Live at: `campaign-reference-five.vercel.app`
+- Custom domain: `campaign-reference.com` (via Squarespace Domains)
+- Live at: [https://campaign-reference.com](https://campaign-reference.com)
 
 ### Build Configuration
 ```json

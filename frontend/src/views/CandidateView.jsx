@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import { useQuarterlyData } from '../hooks/useQuarterlyData';
 import { QuarterlyChart } from '../components/QuarterlyChart';
+import { DataFreshnessIndicator } from '../components/DataFreshnessIndicator';
 import { getPartyColor, formatCompactCurrency, formatCandidateName } from '../utils/formatters';
 
 export default function CandidateView() {
@@ -11,6 +12,7 @@ export default function CandidateView() {
   const [selectedMetric, setSelectedMetric] = useState('receipts');
   const [partyFilter, setPartyFilter] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   // Fetch all candidates on mount
   useEffect(() => {
@@ -36,7 +38,8 @@ export default function CandidateView() {
               financial_summary!inner (
                 total_receipts,
                 total_disbursements,
-                cash_on_hand
+                cash_on_hand,
+                updated_at
               )
             `)
             .eq('cycle', 2026)
@@ -66,10 +69,21 @@ export default function CandidateView() {
           office: c.office,
           totalRaised: c.financial_summary[0]?.total_receipts || 0,
           totalDisbursed: c.financial_summary[0]?.total_disbursements || 0,
-          cashOnHand: c.financial_summary[0]?.cash_on_hand || 0
+          cashOnHand: c.financial_summary[0]?.cash_on_hand || 0,
+          updatedAt: c.financial_summary[0]?.updated_at
         }));
 
         setAllCandidates(flattenedData);
+
+        // Get most recent update timestamp
+        if (flattenedData.length > 0) {
+          const mostRecent = flattenedData.reduce((latest, current) => {
+            if (!latest.updatedAt) return current;
+            if (!current.updatedAt) return latest;
+            return new Date(current.updatedAt) > new Date(latest.updatedAt) ? current : latest;
+          });
+          setLastUpdated(mostRecent.updatedAt);
+        }
       } catch (err) {
         console.error('Error fetching candidates:', err);
       } finally {
@@ -162,13 +176,16 @@ export default function CandidateView() {
       {/* Header */}
       <header className="bg-rb-navy border-b border-rb-blue shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white">
-              By Candidate
-            </h1>
-            <p className="mt-1 text-sm text-gray-300">
-              Search and compare candidates across all races
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                By Candidate
+              </h1>
+              <p className="mt-1 text-sm text-gray-300">
+                Search and compare candidates across all races
+              </p>
+            </div>
+            <DataFreshnessIndicator lastUpdated={lastUpdated} loading={loading} />
           </div>
         </div>
       </header>

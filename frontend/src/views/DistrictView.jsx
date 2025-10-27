@@ -4,6 +4,7 @@ import { useQuarterlyData } from '../hooks/useQuarterlyData';
 import { QuarterlyChart } from '../components/QuarterlyChart';
 import { StateToggle } from '../components/StateToggle';
 import { DistrictToggle } from '../components/DistrictToggle';
+import { DataFreshnessIndicator } from '../components/DataFreshnessIndicator';
 import { getPartyColor, formatCurrency, formatCompactCurrency } from '../utils/formatters';
 
 export default function DistrictView() {
@@ -16,6 +17,7 @@ export default function DistrictView() {
   const [partyFilter, setPartyFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   // Fetch candidates for the selected district
   useEffect(() => {
@@ -43,7 +45,8 @@ export default function DistrictView() {
             financial_summary!inner (
               total_receipts,
               total_disbursements,
-              cash_on_hand
+              cash_on_hand,
+              updated_at
             )
           `)
           .eq('cycle', 2026)
@@ -87,10 +90,21 @@ export default function DistrictView() {
           office: c.office,
           totalRaised: c.financial_summary[0]?.total_receipts || 0,
           totalDisbursed: c.financial_summary[0]?.total_disbursements || 0,
-          cashOnHand: c.financial_summary[0]?.cash_on_hand || 0
+          cashOnHand: c.financial_summary[0]?.cash_on_hand || 0,
+          updatedAt: c.financial_summary[0]?.updated_at
         }));
 
         setCandidates(flattenedData);
+
+        // Get most recent update timestamp
+        if (flattenedData.length > 0) {
+          const mostRecent = flattenedData.reduce((latest, current) => {
+            if (!latest.updatedAt) return current;
+            if (!current.updatedAt) return latest;
+            return new Date(current.updatedAt) > new Date(latest.updatedAt) ? current : latest;
+          });
+          setLastUpdated(mostRecent.updatedAt);
+        }
       } catch (err) {
         console.error('Error fetching candidates:', err);
         setError(err.message);
@@ -187,13 +201,16 @@ export default function DistrictView() {
       {/* Header */}
       <header className="bg-rb-navy border-b border-rb-blue shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white">
-              District Race View
-            </h1>
-            <p className="mt-1 text-sm text-gray-300">
-              Compare all candidates within a single district across quarters
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                District Race View
+              </h1>
+              <p className="mt-1 text-sm text-gray-300">
+                Compare all candidates within a single district across quarters
+              </p>
+            </div>
+            <DataFreshnessIndicator lastUpdated={lastUpdated} loading={loading} />
           </div>
         </div>
       </header>

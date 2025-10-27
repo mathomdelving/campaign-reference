@@ -1,18 +1,15 @@
-name: Update FEC Campaign Finance Data
+name: Full Data Refresh
 
 on:
-  # Scheduled updates
+  # Weekly full refresh on Sunday at 2 AM ET (7 AM UTC)
   schedule:
-    # Daily update at 6 AM ET (11 AM UTC)
-    - cron: '0 11 * * *'
-    # Intensive updates during filing periods (every 2 hours on days 13-17 of Jan, Apr, Jul, Oct)
-    - cron: '0 */2 13-17 1,4,7,10 *'
+    - cron: '0 7 * * 0'
 
   # Manual trigger option
   workflow_dispatch:
 
 jobs:
-  update-fec-data:
+  full-refresh:
     runs-on: ubuntu-latest
 
     steps:
@@ -29,10 +26,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Fetch FEC data
+      - name: Fetch FEC data (Full Refresh)
         env:
           FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
         run: |
+          echo "Starting full data refresh - this will take 17-18 hours"
           python fetch_fec_data.py
 
       - name: Load data to Supabase
@@ -44,7 +42,7 @@ jobs:
 
       - name: Log completion
         run: |
-          echo "Data update completed at $(date)"
+          echo "Full refresh completed at $(date)"
           echo "Candidates file size: $(du -h candidates_2026.json | cut -f1)"
           echo "Financials file size: $(du -h financials_2026.json | cut -f1)"
 
@@ -61,4 +59,4 @@ jobs:
       - name: Notify on failure
         if: failure()
         run: |
-          echo "::error::FEC data update failed. Check the logs for details."
+          echo "::error::Full data refresh failed. Check the logs for details."

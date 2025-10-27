@@ -1,0 +1,59 @@
+name: Incremental Data Update
+
+on:
+  # Scheduled updates
+  schedule:
+    # Daily incremental update at 6 AM ET (11 AM UTC)
+    - cron: '0 11 * * *'
+    # Every 2 hours during filing periods (days 13-17 of Jan, Apr, Jul, Oct)
+    - cron: '0 */2 13-17 1,4,7,10 *'
+    # Every 30 minutes during peak filing hours (9am-6pm ET) on filing deadline days (15th of quarter months)
+    - cron: '*/30 13-22 15 1,4,7,10 *'
+
+  # Manual trigger option
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: 'Number of days to look back for filings'
+        required: false
+        default: '1'
+        type: string
+
+jobs:
+  incremental-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run incremental update
+        env:
+          FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          if [ -n "${{ github.event.inputs.lookback_days }}" ]; then
+            python incremental_update.py --lookback ${{ github.event.inputs.lookback_days }}
+          else
+            python incremental_update.py
+          fi
+
+      - name: Log completion
+        run: |
+          echo "Incremental update completed at $(date)"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Incremental data update failed. Check the logs for details."

@@ -1,11 +1,14 @@
-# FEC Campaign Finance Dashboard - Project Status
+# Campaign Reference - Project Status
 
-**Last Updated**: January 24, 2025
-**Status**: ✅ Production Ready
+**Last Updated**: October 26, 2025
+**Status**: ✅ Live in Production
+
+🔗 **Live Site**: [https://campaign-reference-five.vercel.app](https://campaign-reference-five.vercel.app)
+📊 **Repository**: [https://github.com/mathomdelving/campaign-reference](https://github.com/mathomdelving/campaign-reference)
 
 ## Overview
 
-A React-based dashboard visualizing 2026 House and Senate campaign finance data from the FEC OpenFEC API. The application provides three distinct views for analyzing campaign fundraising across all federal races.
+Campaign Reference is a React-based dashboard visualizing 2026 House and Senate campaign finance data from the FEC OpenFEC API. The application provides three distinct views for analyzing campaign fundraising across all federal races, with automated daily data updates and a Red Bull Racing-inspired design.
 
 ## Current Features
 
@@ -19,6 +22,7 @@ A React-based dashboard visualizing 2026 House and Senate campaign finance data 
   - Toggle between table and bar chart view
   - Export to CSV/PNG
   - Data freshness indicator
+  - Red Bull Racing theme with yellow highlights
 
 #### 2. By District (`/district`)
 - **Purpose**: Deep dive into specific district races
@@ -41,20 +45,43 @@ A React-based dashboard visualizing 2026 House and Senate campaign finance data 
   - Quarterly trend chart
   - Loads all 2,866 candidates via batch fetching
 
+## Deployment & Automation
+
+### ✅ GitHub Actions (Phase 4 Complete)
+- **Daily Updates**: 6 AM ET (11 AM UTC)
+- **Filing Period Updates**: Every 2 hours on days 13-17 of Jan, Apr, Jul, Oct
+- Automated FEC data fetching and Supabase loading
+- Error logging and failure notifications
+- Workflow: `.github/workflows/update-data.yml`
+
+### ✅ Vercel Deployment (Phase 5 Complete)
+- **Hosting**: Vercel Free Tier
+- **URL**: campaign-reference-five.vercel.app
+- **Auto-Deploy**: On every push to `main` branch
+- **Build Time**: ~1-2 minutes
+- **Configuration**: `vercel.json` with Root Directory set to `frontend`
+
 ## Technical Stack
 
 ### Frontend
-- **Framework**: React 19 with Vite
-- **Styling**: Tailwind CSS
-- **Charts**: Recharts
-- **Database**: Supabase (PostgreSQL)
-- **Router**: React Router v6
-- **Image Export**: html2canvas
+- **Framework**: React 19.1.1 with Vite 7.1.7
+- **Styling**: Tailwind CSS 3.4.18 (Red Bull Racing theme)
+- **Charts**: Recharts 3.3.0
+- **Database**: Supabase JS Client 2.76.1
+- **Router**: React Router 7.1.3
+- **Image Export**: html2canvas 1.4.1
 
 ### Backend/Data Pipeline
 - **API Source**: FEC OpenFEC API
+- **Database**: Supabase (PostgreSQL)
+- **Automation**: GitHub Actions
 - **Data Scripts**: Python with Supabase client
 - **Rate Limiting**: ~900 requests/hour (4 second delays)
+
+### Deployment & CI/CD
+- **Hosting**: Vercel
+- **Automation**: GitHub Actions
+- **Repository**: GitHub Public
 
 ## Data Coverage
 
@@ -63,6 +90,7 @@ A React-based dashboard visualizing 2026 House and Senate campaign finance data 
 - **Chambers**: House (H) and Senate (S)
 - **Metrics**: Total Receipts, Total Disbursements, Cash on Hand
 - **Quarterly Data**: Available for trend analysis
+- **Update Schedule**: Daily at 6 AM ET + intensive during filing periods
 - **Last Data Refresh**: See DataFreshnessIndicator in app
 
 ## Key Technical Achievements
@@ -99,16 +127,31 @@ A React-based dashboard visualizing 2026 House and Senate campaign finance data 
 - Thicker lines (2.5px) for visibility
 - Supplementary role to ranked list
 
+### Automated Data Pipeline
+- GitHub Actions workflow for scheduled updates
+- Fetches candidate and quarterly financial data
+- Loads to Supabase automatically
+- Logs refresh operations
+- Email notifications on failure
+
+### Continuous Deployment
+- Automatic Vercel deployments on git push
+- Build success/failure notifications
+- Preview deployments for branches
+- Production deployment to campaign-reference-five.vercel.app
+
 ## File Structure
 
 ```
-fec-dashboard/
+campaign-reference/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── layout/
-│   │   │   │   └── Navigation.jsx
-│   │   │   ├── DistrictToggle.jsx
+│   │   │   │   ├── Navigation.jsx  # "Campaign Reference" branding
+│   │   │   │   └── Footer.jsx
+│   │   │   ├── toggles/
+│   │   │   │   └── DistrictToggle.jsx
 │   │   │   ├── QuarterlyChart.jsx
 │   │   │   ├── RaceTable.jsx
 │   │   │   └── ...
@@ -126,23 +169,47 @@ fec-dashboard/
 │   │   │   └── supabaseClient.js
 │   │   └── App.jsx
 │   ├── CLAUDE.md
+│   ├── README.md
 │   └── package.json
+├── .github/
+│   └── workflows/
+│       └── update-data.yml         # Automated data refresh
+├── docs/
+│   ├── GITHUB_DEPLOYMENT_GUIDE.md
+│   ├── VERCEL_DEPLOYMENT_GUIDE.md
+│   └── ...
 ├── fetch_fec_data.py
 ├── load_to_supabase.py
-├── fix_missing_cash.py
+├── vercel.json                     # Vercel deployment config
 ├── CHANGELOG.md
-└── PROJECT_STATUS.md (this file)
+├── PROJECT_STATUS.md (this file)
+└── README.md
 ```
 
 ## Environment Variables
 
-### Frontend (`.env` in `/frontend`)
+### GitHub Secrets
+```
+FEC_API_KEY=your_fec_api_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_service_role_key
+```
+
+### Vercel Environment Variables
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_public_key
+```
+
+### Local Development
+
+**Frontend (`.env` in `/frontend`):**
 ```
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### Backend (`.env` in project root)
+**Backend (`.env` in project root):**
 ```
 FEC_API_KEY=your_fec_api_key
 SUPABASE_URL=your_supabase_url
@@ -160,31 +227,73 @@ Runs on http://localhost:5173 (or 5174 if 5173 is in use)
 
 ### Build for Production
 ```bash
+cd frontend
 npm run build
 npm run preview
 ```
 
+### Monitor Automated Updates
+```bash
+# View GitHub Actions workflow status
+gh run list --workflow=update-data.yml
+
+# View latest run logs
+gh run view --log
+```
+
 ## Known Limitations
 
-1. **Data Refresh**: Requires manual re-run of Python scripts
+1. **Rate Limiting**: FEC API limited to ~900 requests/hour (mitigated with delays)
 2. **Invalid Districts**: 34 legacy candidates in database (filtered from UI)
-3. **Rate Limiting**: FEC API limited to ~900 requests/hour
-4. **Quarterly Data**: Not all candidates have full quarterly breakdowns
+3. **Quarterly Data**: Not all candidates have full quarterly breakdowns
+4. **Vercel URL**: Using default Vercel subdomain (campaign-reference-five.vercel.app)
 
 ## Future Enhancements (Potential)
 
-- [ ] Automated data refresh scheduling
+- [ ] Custom domain (campaign-reference.com)
 - [ ] Individual donor tracking (would require significant additional data)
 - [ ] Historical cycle comparison (2024, 2022, etc.)
 - [ ] Geographic visualization (maps)
 - [ ] Contribution timeline analysis
 - [ ] Committee expenditure breakdowns
+- [ ] Mobile app version
 
 ## Documentation
 
+- **README.md** - Project overview and quick start
+- **frontend/README.md** - Frontend-specific documentation
+- **frontend/CLAUDE.md** - Technical architecture for Claude Code
 - **CHANGELOG.md** - Detailed change history
-- **frontend/CLAUDE.md** - Technical architecture and implementation details
 - **PROJECT_STATUS.md** - This file (current state overview)
+- **docs/GITHUB_DEPLOYMENT_GUIDE.md** - GitHub Actions setup guide
+- **docs/VERCEL_DEPLOYMENT_GUIDE.md** - Vercel deployment guide
+
+## Project Phases
+
+### ✅ Phase 1-3: Core Development (Complete)
+- Data collection infrastructure
+- Database schema with quarterly financials
+- Three-view dashboard (Leaderboard, By District, By Candidate)
+- Red Bull Racing-inspired UI
+- Search, filter, and export functionality
+
+### ✅ Phase 4: Automation (Complete)
+- GitHub Actions workflow
+- Daily data updates at 6 AM ET
+- Intensive updates during filing periods (every 2 hours on days 13-17)
+- Error logging and notifications
+
+### ✅ Phase 5: Deployment (Complete)
+- Vercel hosting
+- Automatic deployments on push
+- Live at campaign-reference-five.vercel.app
+- Production-ready with monitoring
+
+### 🎯 Current Focus
+- Monitoring automated data updates
+- Gathering user feedback
+- Performance optimization
+- Potential custom domain acquisition
 
 ## Deployment Readiness
 
@@ -197,5 +306,12 @@ npm run preview
 ✅ Export functionality working
 ✅ Senate support complete
 ✅ District validation implemented
+✅ GitHub Actions automation live
+✅ Vercel deployment successful
+✅ Automated daily data updates
 
-**Status**: Ready for production deployment 🚀
+**Status**: ✅ Live in Production at [campaign-reference-five.vercel.app](https://campaign-reference-five.vercel.app) 🚀
+
+**Branding**: Campaign Reference (formerly Political Pole)
+**Version**: 1.0.0
+**Last Updated**: October 26, 2025

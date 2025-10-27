@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **React-based FEC Campaign Finance Dashboard** that visualizes 2026 House and Senate campaign finance data. The frontend fetches data from a Supabase backend that is populated by Python scripts that pull from the FEC OpenFEC API.
+This is **Campaign Reference**, a React-based FEC Campaign Finance Dashboard that visualizes 2026 House and Senate campaign finance data. The frontend fetches data from a Supabase backend that is populated by Python scripts that pull from the FEC OpenFEC API.
 
 **Tech Stack:**
 - React 19 with Vite

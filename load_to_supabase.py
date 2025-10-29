@@ -78,8 +78,7 @@ def transform_candidates(candidates_data):
             'cycle': cycle
         })
     return transformed
-    transformed = []
-    
+
 def transform_financials(financials_data):
     """Transform financial JSON to database format."""
     transformed = []

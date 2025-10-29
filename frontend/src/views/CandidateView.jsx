@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import { useQuarterlyData } from '../hooks/useQuarterlyData';
 import { QuarterlyChart } from '../components/QuarterlyChart';
+import { MetricToggle } from '../components/MetricToggle';
 import { DataFreshnessIndicator } from '../components/DataFreshnessIndicator';
 import { getPartyColor, formatCompactCurrency, formatCandidateName } from '../utils/formatters';
 
@@ -9,10 +10,22 @@ export default function CandidateView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [allCandidates, setAllCandidates] = useState([]);
   const [selectedCandidateIds, setSelectedCandidateIds] = useState([]);
-  const [selectedMetric, setSelectedMetric] = useState('receipts');
+  const [metrics, setMetrics] = useState({
+    totalRaised: true,
+    totalDisbursed: false,
+    cashOnHand: false
+  });
   const [partyFilter, setPartyFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+
+  // Update metric
+  const updateMetric = (metricKey, isChecked) => {
+    setMetrics(prev => ({
+      ...prev,
+      [metricKey]: isChecked
+    }));
+  };
 
   // Fetch all candidates on mount
   useEffect(() => {
@@ -131,26 +144,15 @@ export default function CandidateView() {
     selectedCandidateIds.includes(c.candidate_id)
   );
 
-  // Sort selected candidates by metric
+  // Get the first selected metric for sorting (default to totalRaised)
+  const primaryMetric = metrics.totalRaised ? 'totalRaised' :
+                       metrics.totalDisbursed ? 'totalDisbursed' :
+                       metrics.cashOnHand ? 'cashOnHand' : 'totalRaised';
+
+  // Sort selected candidates by primary metric
   const sortedSelectedCandidates = [...selectedCandidates].sort((a, b) => {
-    let aValue = 0;
-    let bValue = 0;
-
-    switch (selectedMetric) {
-      case 'receipts':
-        aValue = a.totalRaised || 0;
-        bValue = b.totalRaised || 0;
-        break;
-      case 'disbursements':
-        aValue = a.totalDisbursed || 0;
-        bValue = b.totalDisbursed || 0;
-        break;
-      case 'cashOnHand':
-        aValue = a.cashOnHand || 0;
-        bValue = b.cashOnHand || 0;
-        break;
-    }
-
+    const aValue = a[primaryMetric] || 0;
+    const bValue = b[primaryMetric] || 0;
     return bValue - aValue; // Descending order
   });
 
@@ -257,20 +259,10 @@ export default function CandidateView() {
 
               {/* Metric Selector */}
               {selectedCandidateIds.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Metric
-                  </label>
-                  <select
-                    value={selectedMetric}
-                    onChange={(e) => setSelectedMetric(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rb-red"
-                  >
-                    <option value="receipts">Total Raised</option>
-                    <option value="disbursements">Total Spent</option>
-                    <option value="cashOnHand">Cash on Hand</option>
-                  </select>
-                </div>
+                <MetricToggle
+                  metrics={metrics}
+                  onChange={updateMetric}
+                />
               )}
             </div>
           </div>
@@ -340,19 +332,6 @@ export default function CandidateView() {
               {/* Ranked Candidate List */}
               <div className="space-y-2">
                 {sortedSelectedCandidates.map((candidate, index) => {
-                  let metricValue = 0;
-                  switch (selectedMetric) {
-                    case 'receipts':
-                      metricValue = candidate.totalRaised || 0;
-                      break;
-                    case 'disbursements':
-                      metricValue = candidate.totalDisbursed || 0;
-                      break;
-                    case 'cashOnHand':
-                      metricValue = candidate.cashOnHand || 0;
-                      break;
-                  }
-
                   return (
                     <div
                       key={candidate.candidate_id}
@@ -381,11 +360,23 @@ export default function CandidateView() {
                         </div>
                       </div>
 
-                      {/* Metric Value */}
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-sm font-semibold text-gray-900">
-                          {formatCompactCurrency(metricValue)}
-                        </div>
+                      {/* Metric Values */}
+                      <div className="text-right flex-shrink-0 space-y-1">
+                        {metrics.totalRaised && (
+                          <div className="text-xs text-gray-600">
+                            Raised: <span className="font-semibold text-gray-900">{formatCompactCurrency(candidate.totalRaised || 0)}</span>
+                          </div>
+                        )}
+                        {metrics.totalDisbursed && (
+                          <div className="text-xs text-gray-600">
+                            Spent: <span className="font-semibold text-gray-900">{formatCompactCurrency(candidate.totalDisbursed || 0)}</span>
+                          </div>
+                        )}
+                        {metrics.cashOnHand && (
+                          <div className="text-xs text-gray-600">
+                            Cash: <span className="font-semibold text-gray-900">{formatCompactCurrency(candidate.cashOnHand || 0)}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Remove Button */}
@@ -403,14 +394,34 @@ export default function CandidateView() {
               </div>
             </div>
 
-            {/* Quarterly Chart */}
-            <div className="bg-white rounded-lg shadow">
-              <QuarterlyChart
-                data={quarterlyData}
-                selectedCandidates={sortedSelectedCandidates}
-                metric={selectedMetric}
-              />
-            </div>
+            {/* Quarterly Charts - one for each selected metric */}
+            {metrics.totalRaised && (
+              <div className="bg-white rounded-lg shadow">
+                <QuarterlyChart
+                  data={quarterlyData}
+                  selectedCandidates={sortedSelectedCandidates}
+                  metric="receipts"
+                />
+              </div>
+            )}
+            {metrics.totalDisbursed && (
+              <div className="bg-white rounded-lg shadow">
+                <QuarterlyChart
+                  data={quarterlyData}
+                  selectedCandidates={sortedSelectedCandidates}
+                  metric="disbursements"
+                />
+              </div>
+            )}
+            {metrics.cashOnHand && (
+              <div className="bg-white rounded-lg shadow">
+                <QuarterlyChart
+                  data={quarterlyData}
+                  selectedCandidates={sortedSelectedCandidates}
+                  metric="cashOnHand"
+                />
+              </div>
+            )}
           </div>
         )}
       </main>

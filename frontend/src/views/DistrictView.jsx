@@ -4,14 +4,30 @@ import { useQuarterlyData } from '../hooks/useQuarterlyData';
 import { QuarterlyChart } from '../components/QuarterlyChart';
 import { StateToggle } from '../components/StateToggle';
 import { DistrictToggle } from '../components/DistrictToggle';
+import { MetricToggle } from '../components/MetricToggle';
 import { DataFreshnessIndicator } from '../components/DataFreshnessIndicator';
 import { getPartyColor, formatCurrency, formatCompactCurrency } from '../utils/formatters';
+
+// Valid district counts per state (as of 2022 redistricting)
+const VALID_DISTRICT_COUNTS = {
+  'AL': 7, 'AK': 1, 'AZ': 9, 'AR': 4, 'CA': 52, 'CO': 8, 'CT': 5, 'DE': 1,
+  'FL': 28, 'GA': 14, 'HI': 2, 'ID': 2, 'IL': 17, 'IN': 9, 'IA': 4, 'KS': 4,
+  'KY': 6, 'LA': 6, 'ME': 2, 'MD': 8, 'MA': 9, 'MI': 13, 'MN': 8, 'MS': 4,
+  'MO': 8, 'MT': 2, 'NE': 3, 'NV': 4, 'NH': 2, 'NJ': 12, 'NM': 3, 'NY': 26,
+  'NC': 14, 'ND': 1, 'OH': 15, 'OK': 5, 'OR': 6, 'PA': 17, 'RI': 2, 'SC': 7,
+  'SD': 1, 'TN': 9, 'TX': 38, 'UT': 4, 'VT': 1, 'VA': 11, 'WA': 10, 'WV': 2,
+  'WI': 8, 'WY': 1, 'DC': 0
+};
 
 export default function DistrictView() {
   const [state, setState] = useState('all');
   const [chamber, setChamber] = useState('H');
   const [district, setDistrict] = useState('all');
-  const [selectedMetric, setSelectedMetric] = useState('receipts');
+  const [metrics, setMetrics] = useState({
+    totalRaised: true,
+    totalDisbursed: false,
+    cashOnHand: false
+  });
   const [selectedCandidateIds, setSelectedCandidateIds] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [partyFilter, setPartyFilter] = useState('all');
@@ -19,11 +35,34 @@ export default function DistrictView() {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // Update metric
+  const updateMetric = (metricKey, isChecked) => {
+    setMetrics(prev => ({
+      ...prev,
+      [metricKey]: isChecked
+    }));
+  };
+
+  // Helper function to format district display text
+  const getDistrictDisplayText = () => {
+    if (chamber === 'H') {
+      if (district === 'all') {
+        return 'House';
+      }
+      // Check if this is an at-large district (00) or single-district state
+      const isSingleDistrict = VALID_DISTRICT_COUNTS[state] === 1;
+      const isAtLarge = district === '00' || district === '0' || isSingleDistrict;
+      return isAtLarge ? 'At Large' : `District ${district}`;
+    } else {
+      return district === 'all' ? 'Senate' : `Senate Class ${district}`;
+    }
+  };
+
   // Fetch candidates for the selected district
   useEffect(() => {
     async function fetchCandidates() {
-      // Don't fetch if state or district is not selected
-      if (state === 'all' || district === 'all') {
+      // Don't fetch if state is not selected
+      if (state === 'all') {
         setCandidates([]);
         return;
       }
@@ -54,7 +93,11 @@ export default function DistrictView() {
 
         // Add office-specific filters
         if (chamber === 'H') {
-          query = query.eq('office', 'H').eq('district', district);
+          query = query.eq('office', 'H');
+          // Only filter by specific district if not "all"
+          if (district !== 'all') {
+            query = query.eq('district', district);
+          }
         } else if (chamber === 'S') {
           query = query.eq('office', 'S');
         }
@@ -166,26 +209,15 @@ export default function DistrictView() {
     return true;
   });
 
-  // Sort candidates by current metric value (highest to lowest)
+  // Get the first selected metric for sorting (default to totalRaised)
+  const primaryMetric = metrics.totalRaised ? 'totalRaised' :
+                       metrics.totalDisbursed ? 'totalDisbursed' :
+                       metrics.cashOnHand ? 'cashOnHand' : 'totalRaised';
+
+  // Sort candidates by primary metric value (highest to lowest)
   const sortedCandidates = [...filteredCandidates].sort((a, b) => {
-    let aValue = 0;
-    let bValue = 0;
-
-    switch (selectedMetric) {
-      case 'receipts':
-        aValue = a.totalRaised || 0;
-        bValue = b.totalRaised || 0;
-        break;
-      case 'disbursements':
-        aValue = a.totalDisbursed || 0;
-        bValue = b.totalDisbursed || 0;
-        break;
-      case 'cashOnHand':
-        aValue = a.cashOnHand || 0;
-        bValue = b.cashOnHand || 0;
-        break;
-    }
-
+    const aValue = a[primaryMetric] || 0;
+    const bValue = b[primaryMetric] || 0;
     return bValue - aValue; // Descending order
   });
 
@@ -194,7 +226,7 @@ export default function DistrictView() {
     ? sortedCandidates.filter(c => selectedCandidateIds.includes(c.candidate_id))
     : sortedCandidates;
 
-  const showChart = state !== 'all' && district !== 'all' && candidates.length > 0;
+  const showChart = state !== 'all' && candidates.length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -247,18 +279,10 @@ export default function DistrictView() {
 
             {showChart && (
               <div className="ml-auto">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Metric
-                </label>
-                <select
-                  value={selectedMetric}
-                  onChange={(e) => setSelectedMetric(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rb-red"
-                >
-                  <option value="receipts">Total Raised</option>
-                  <option value="disbursements">Total Spent</option>
-                  <option value="cashOnHand">Cash on Hand</option>
-                </select>
+                <MetricToggle
+                  metrics={metrics}
+                  onChange={updateMetric}
+                />
               </div>
             )}
           </div>
@@ -304,7 +328,7 @@ export default function DistrictView() {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">No Candidates Found</h2>
             <p className="text-gray-600 max-w-md mx-auto">
-              No candidates with financial data found for {state} {chamber === 'H' ? `District ${district}` : `Senate Class ${district}`}
+              No candidates with financial data found for {state} {getDistrictDisplayText()}
             </p>
           </div>
         ) : (
@@ -313,7 +337,7 @@ export default function DistrictView() {
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Candidates in {state} {chamber === 'H' ? `District ${district}` : `Senate Class ${district}`} ({sortedCandidates.length})
+                  Candidates in {state} {getDistrictDisplayText()} ({sortedCandidates.length})
                 </h3>
 
                 {/* Party Filter Buttons */}
@@ -366,19 +390,6 @@ export default function DistrictView() {
                 {sortedCandidates.map((candidate, index) => {
                   const isSelected = selectedCandidateIds.length === 0 || selectedCandidateIds.includes(candidate.candidate_id);
 
-                  let metricValue = 0;
-                  switch (selectedMetric) {
-                    case 'receipts':
-                      metricValue = candidate.totalRaised || 0;
-                      break;
-                    case 'disbursements':
-                      metricValue = candidate.totalDisbursed || 0;
-                      break;
-                    case 'cashOnHand':
-                      metricValue = candidate.cashOnHand || 0;
-                      break;
-                  }
-
                   return (
                     <label
                       key={candidate.candidate_id}
@@ -414,11 +425,23 @@ export default function DistrictView() {
                         </div>
                       </div>
 
-                      {/* Metric Value */}
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-sm font-semibold text-gray-900">
-                          {formatCompactCurrency(metricValue)}
-                        </div>
+                      {/* Metric Values */}
+                      <div className="text-right flex-shrink-0 space-y-1">
+                        {metrics.totalRaised && (
+                          <div className="text-xs text-gray-600">
+                            Raised: <span className="font-semibold text-gray-900">{formatCompactCurrency(candidate.totalRaised || 0)}</span>
+                          </div>
+                        )}
+                        {metrics.totalDisbursed && (
+                          <div className="text-xs text-gray-600">
+                            Spent: <span className="font-semibold text-gray-900">{formatCompactCurrency(candidate.totalDisbursed || 0)}</span>
+                          </div>
+                        )}
+                        {metrics.cashOnHand && (
+                          <div className="text-xs text-gray-600">
+                            Cash: <span className="font-semibold text-gray-900">{formatCompactCurrency(candidate.cashOnHand || 0)}</span>
+                          </div>
+                        )}
                       </div>
                     </label>
                   );
@@ -434,14 +457,34 @@ export default function DistrictView() {
               </div>
             </div>
 
-            {/* Quarterly Chart */}
-            <div className="bg-white rounded-lg shadow">
-              <QuarterlyChart
-                data={quarterlyData}
-                selectedCandidates={selectedCandidates}
-                metric={selectedMetric}
-              />
-            </div>
+            {/* Quarterly Charts - one for each selected metric */}
+            {metrics.totalRaised && (
+              <div className="bg-white rounded-lg shadow">
+                <QuarterlyChart
+                  data={quarterlyData}
+                  selectedCandidates={selectedCandidates}
+                  metric="receipts"
+                />
+              </div>
+            )}
+            {metrics.totalDisbursed && (
+              <div className="bg-white rounded-lg shadow">
+                <QuarterlyChart
+                  data={quarterlyData}
+                  selectedCandidates={selectedCandidates}
+                  metric="disbursements"
+                />
+              </div>
+            )}
+            {metrics.cashOnHand && (
+              <div className="bg-white rounded-lg shadow">
+                <QuarterlyChart
+                  data={quarterlyData}
+                  selectedCandidates={selectedCandidates}
+                  metric="cashOnHand"
+                />
+              </div>
+            )}
           </div>
         )}
       </main>

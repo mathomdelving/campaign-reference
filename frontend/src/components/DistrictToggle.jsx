@@ -44,12 +44,19 @@ export function DistrictToggle({ value, onChange, state, chamber }) {
           const uniqueDistricts = [...new Set(data.map(d => d.district))]
             .filter(d => {
               const districtNum = parseInt(d, 10);
-              return !isNaN(districtNum) && districtNum > 0 && districtNum <= maxDistricts;
+              // Allow "00" for at-large districts, or valid numbered districts
+              return (!isNaN(districtNum) && districtNum === 0) ||
+                     (!isNaN(districtNum) && districtNum > 0 && districtNum <= maxDistricts);
             })
             .sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
           setDistricts(uniqueDistricts);
           setSenateSeatClasses([]);
+
+          // Auto-select At Large district for single-district states
+          if (maxDistricts === 1 && uniqueDistricts.length > 0) {
+            onChange(uniqueDistricts[0]);
+          }
         } catch (err) {
           console.error('Error fetching districts:', err);
         } finally {
@@ -101,6 +108,9 @@ export function DistrictToggle({ value, onChange, state, chamber }) {
     return null;
   }
 
+  // Check if this is a single-district state
+  const isSingleDistrictState = chamber === 'H' && VALID_DISTRICT_COUNTS[state] === 1;
+
   return (
     <div className="flex flex-col gap-2">
       <label className="text-sm font-medium text-gray-700">
@@ -112,14 +122,21 @@ export function DistrictToggle({ value, onChange, state, chamber }) {
         disabled={loading || state === 'all' || (chamber === 'H' && districts.length === 0) || (chamber === 'S' && senateSeatClasses.length === 0)}
         className="w-48 h-[42px] px-3 py-2 text-sm font-semibold border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-rb-red focus:border-rb-red disabled:bg-gray-100 disabled:cursor-not-allowed"
       >
-        <option value="all">
-          {chamber === 'H' ? 'All Districts' : 'All Senate Seats'}
-        </option>
-        {chamber === 'H' && districts.map(district => (
-          <option key={district} value={district}>
-            District {district}
+        {/* Only show "All Districts/Senate Seats" option for multi-district states */}
+        {!isSingleDistrictState && (
+          <option value="all">
+            {chamber === 'H' ? 'All Districts' : 'All Senate Seats'}
           </option>
-        ))}
+        )}
+        {chamber === 'H' && districts.map(district => {
+          // Check if this is an at-large district (00) or single-district state
+          const isAtLarge = district === '00' || district === '0' || isSingleDistrictState;
+          return (
+            <option key={district} value={district}>
+              {isAtLarge ? 'At Large' : `District ${district}`}
+            </option>
+          );
+        })}
         {chamber === 'S' && senateSeatClasses.map(seatClass => (
           <option key={seatClass} value={seatClass}>
             Class {seatClass}

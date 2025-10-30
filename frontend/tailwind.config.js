@@ -23,6 +23,7 @@ export default {
     'hover:text-rb-blue',
     'hover:text-rb-red',
     'focus:ring-rb-red',
+    'font-baskerville',
   ],
   theme: {
     extend: {
@@ -31,6 +32,9 @@ export default {
         'rb-blue': '#223971',
         'rb-red': '#CC1E4A',
         'rb-yellow': '#FFC906',
+      },
+      fontFamily: {
+        'baskerville': ['"Libre Baskerville"', 'serif'],
       },
     },
   },

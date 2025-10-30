@@ -102,7 +102,7 @@ export default function NotificationSettingsView() {
         >
           ← Back
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Notification Settings</h1>
+        <h1 className="text-3xl font-bold font-baskerville text-gray-900">Notification Settings</h1>
         <p className="mt-2 text-gray-600">
           Manage email notifications for candidates you're watching
         </p>

@@ -300,7 +300,7 @@ export default function DistrictView() {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white">
+              <h1 className="text-3xl font-bold font-baskerville text-white">
                 District Race View
               </h1>
               <p className="mt-1 text-sm text-gray-300">
@@ -379,7 +379,7 @@ export default function DistrictView() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Select a District</h2>
+            <h2 className="text-2xl font-bold font-baskerville text-gray-900 mb-2">Select a District</h2>
             <p className="text-gray-600 max-w-md mx-auto">
               Choose a state and district above to see all candidates in that race and compare their quarterly fundraising trends.
             </p>
@@ -391,7 +391,7 @@ export default function DistrictView() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No Candidates Found</h2>
+            <h2 className="text-2xl font-bold font-baskerville text-gray-900 mb-2">No Candidates Found</h2>
             <p className="text-gray-600 max-w-md mx-auto">
               No candidates with financial data found for {state} {getDistrictDisplayText()}
             </p>

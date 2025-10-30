@@ -88,7 +88,7 @@ export default function UnsubscribeView() {
                 />
               </svg>
             </div>
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">Unsubscribed</h2>
+            <h2 className="mt-4 text-2xl font-bold font-baskerville text-gray-900">Unsubscribed</h2>
             <p className="mt-2 text-gray-600">{message}</p>
 
             <div className="mt-6 space-y-3">
@@ -134,7 +134,7 @@ export default function UnsubscribeView() {
                 />
               </svg>
             </div>
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">Error</h2>
+            <h2 className="mt-4 text-2xl font-bold font-baskerville text-gray-900">Error</h2>
             <p className="mt-2 text-gray-600">{message}</p>
 
             <div className="mt-8 flex flex-col gap-3">

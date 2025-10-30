@@ -39,7 +39,7 @@ export default function LeaderboardView() {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white">
+              <h1 className="text-3xl font-bold font-baskerville text-white">
                 Campaign Finance Leaderboard
               </h1>
               <p className="mt-1 text-sm text-gray-300">

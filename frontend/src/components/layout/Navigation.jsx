@@ -28,7 +28,7 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo/Title */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="text-2xl font-bold text-rb-yellow">
+            <div className="text-2xl font-bold text-rb-yellow font-baskerville">
               Campaign Reference
             </div>
           </Link>

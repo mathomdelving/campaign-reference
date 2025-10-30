@@ -49,11 +49,30 @@ jobs:
             python incremental_update.py
           fi
 
+      - name: Detect new filings and queue notifications
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          echo "Detecting new filings and queuing notifications..."
+          python detect_new_filings.py
+
+      - name: Send email notifications
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          SENDGRID_FROM_EMAIL: ${{ secrets.SENDGRID_FROM_EMAIL }}
+          SENDGRID_FROM_NAME: ${{ secrets.SENDGRID_FROM_NAME }}
+        run: |
+          echo "Sending email notifications..."
+          python send_notifications.py
+
       - name: Log completion
         run: |
-          echo "Incremental update completed at $(date)"
+          echo "Incremental update and notifications completed at $(date)"
 
       - name: Notify on failure
         if: failure()
         run: |
-          echo "::error::Incremental data update failed. Check the logs for details."
+          echo "::error::Incremental data update or notifications failed. Check the logs for details."

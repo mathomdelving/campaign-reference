@@ -4,6 +4,7 @@ import { useQuarterlyData } from '../hooks/useQuarterlyData';
 import { QuarterlyChart } from '../components/QuarterlyChart';
 import { MetricToggle } from '../components/MetricToggle';
 import { DataFreshnessIndicator } from '../components/DataFreshnessIndicator';
+import { FollowButton } from '../components/follow/FollowButton';
 import { getPartyColor, formatCompactCurrency, formatCandidateName } from '../utils/formatters';
 
 export default function CandidateView() {
@@ -337,18 +338,35 @@ export default function CandidateView() {
                       key={candidate.candidate_id}
                       className="flex items-center gap-3 p-3 border rounded-md"
                     >
-                      {/* Rank Number */}
-                      <div className="flex-shrink-0 w-8 text-center">
-                        <span className="text-sm font-bold text-gray-600">
-                          {index + 1}.
-                        </span>
-                      </div>
+                      <div className="flex items-center gap-3">
+                        {/* Rank Number */}
+                        <div className="flex-shrink-0 w-8 text-center flex items-center justify-center">
+                          <span className="text-sm font-bold text-gray-600">
+                            {index + 1}.
+                          </span>
+                        </div>
 
-                      {/* Party Color Dot */}
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: getPartyColor(candidate.party) }}
-                      ></div>
+                        {/* Party Color Dot */}
+                        <div className="flex items-center justify-center flex-shrink-0">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: getPartyColor(candidate.party) }}
+                          ></div>
+                        </div>
+
+                        {/* Follow Button */}
+                        <div className="flex items-center justify-center flex-shrink-0">
+                          <FollowButton
+                            candidateId={candidate.candidate_id}
+                            candidateName={candidate.name}
+                            party={candidate.party}
+                            office={candidate.office}
+                            state={candidate.state}
+                            district={candidate.district}
+                            size="sm"
+                          />
+                        </div>
+                      </div>
 
                       {/* Candidate Info */}
                       <div className="flex-1 min-w-0">

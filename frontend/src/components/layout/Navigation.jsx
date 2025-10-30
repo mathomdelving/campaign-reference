@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { AuthButton } from '../auth/AuthButton';
 
 export function Navigation() {
   const location = useLocation();
@@ -32,27 +33,33 @@ export function Navigation() {
             </div>
           </Link>
 
-          {/* Navigation Links */}
-          <div className="flex items-center gap-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`
-                  px-4 py-2 rounded-md text-sm font-medium transition-colors
-                  flex items-center gap-2
-                  ${isActive(item.path)
-                    ? 'bg-rb-red text-white'
-                    : 'text-gray-300 hover:bg-rb-blue hover:text-white'
-                  }
-                `}
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {getIcon(item.icon)}
-                </svg>
-                <span className="hidden sm:inline">{item.label}</span>
-              </Link>
-            ))}
+          {/* Navigation Links and Auth */}
+          <div className="flex items-center gap-4">
+            {/* Navigation Links */}
+            <div className="flex items-center gap-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`
+                    px-4 py-2 rounded-md text-sm font-medium transition-colors
+                    flex items-center gap-2
+                    ${isActive(item.path)
+                      ? 'bg-rb-red text-white'
+                      : 'text-gray-300 hover:bg-rb-blue hover:text-white'
+                    }
+                  `}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {getIcon(item.icon)}
+                  </svg>
+                  <span className="hidden sm:inline">{item.label}</span>
+                </Link>
+              ))}
+            </div>
+
+            {/* Auth Button */}
+            <AuthButton />
           </div>
         </div>
       </div>

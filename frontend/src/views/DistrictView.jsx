@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../utils/supabaseClient';
+import { useAuth } from '../contexts/AuthContext';
 import { useQuarterlyData } from '../hooks/useQuarterlyData';
 import { QuarterlyChart } from '../components/QuarterlyChart';
 import { StateToggle } from '../components/StateToggle';
 import { DistrictToggle } from '../components/DistrictToggle';
 import { MetricToggle } from '../components/MetricToggle';
 import { DataFreshnessIndicator } from '../components/DataFreshnessIndicator';
+import { FollowButton } from '../components/follow/FollowButton';
 import { getPartyColor, formatCurrency, formatCompactCurrency } from '../utils/formatters';
 
 // Valid district counts per state (as of 2022 redistricting)
@@ -20,6 +22,7 @@ const VALID_DISTRICT_COUNTS = {
 };
 
 export default function DistrictView() {
+  const { user } = useAuth();
   const [state, setState] = useState('all');
   const [chamber, setChamber] = useState('H');
   const [district, setDistrict] = useState('all');
@@ -34,6 +37,7 @@ export default function DistrictView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [watchingAll, setWatchingAll] = useState(false);
 
   // Update metric
   const updateMetric = (metricKey, isChecked) => {
@@ -197,6 +201,67 @@ export default function DistrictView() {
     }
   };
 
+  // Watch all candidates in the current view
+  const handleWatchAll = async () => {
+    if (!user) {
+      alert('Please sign in to watch candidates');
+      return;
+    }
+
+    setWatchingAll(true);
+
+    try {
+      // Get current follow count
+      const { count: currentCount, error: countError } = await supabase
+        .from('user_candidate_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (countError) throw countError;
+
+      const remainingSlots = 50 - (currentCount || 0);
+      const candidatesToWatch = sortedCandidates.slice(0, remainingSlots);
+
+      if (candidatesToWatch.length === 0) {
+        alert('You have reached the maximum of 50 followed candidates.');
+        setWatchingAll(false);
+        return;
+      }
+
+      if (candidatesToWatch.length < sortedCandidates.length) {
+        if (!confirm(`You can only watch ${candidatesToWatch.length} of ${sortedCandidates.length} candidates due to the 50-candidate limit. Continue?`)) {
+          setWatchingAll(false);
+          return;
+        }
+      }
+
+      // Batch insert all candidates
+      const followsToInsert = candidatesToWatch.map(candidate => ({
+        user_id: user.id,
+        candidate_id: candidate.candidate_id,
+        candidate_name: candidate.name,
+        party: candidate.party,
+        office: candidate.office,
+        state: candidate.state,
+        district: candidate.district,
+        notification_enabled: true,
+      }));
+
+      const { error } = await supabase
+        .from('user_candidate_follows')
+        .upsert(followsToInsert, { onConflict: 'user_id,candidate_id', ignoreDuplicates: true });
+
+      if (error) throw error;
+
+      alert(`Successfully watching ${candidatesToWatch.length} candidates!`);
+    } catch (error) {
+      console.error('Error watching all candidates:', error);
+      alert('Failed to watch all candidates. Please try again.');
+    } finally {
+      setWatchingAll(false);
+    }
+  };
+
   // Filter candidates by party
   const filteredCandidates = candidates.filter(c => {
     if (partyFilter === 'all') return true;
@@ -336,9 +401,21 @@ export default function DistrictView() {
             {/* Candidate Selection */}
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Candidates in {state} {getDistrictDisplayText()} ({sortedCandidates.length})
-                </h3>
+                <div className="flex items-center gap-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Candidates in {state} {getDistrictDisplayText()} ({sortedCandidates.length})
+                  </h3>
+                  <button
+                    onClick={handleWatchAll}
+                    disabled={watchingAll || sortedCandidates.length === 0}
+                    className="px-3 py-1 text-sm font-medium text-rb-red hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                    {watchingAll ? 'Watching...' : 'Watch all'}
+                  </button>
+                </div>
 
                 {/* Party Filter Buttons */}
                 <div className="flex gap-2">
@@ -395,25 +472,42 @@ export default function DistrictView() {
                       key={candidate.candidate_id}
                       className="flex items-center gap-3 p-3 border rounded-md cursor-pointer hover:bg-gray-50 transition-colors"
                     >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleCandidate(candidate.candidate_id)}
-                        className="h-4 w-4 text-rb-red focus:ring-rb-red border-gray-300 rounded"
-                      />
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleCandidate(candidate.candidate_id)}
+                          className="h-4 w-4 text-rb-red focus:ring-rb-red border-gray-300 rounded"
+                        />
 
-                      {/* Rank Number */}
-                      <div className="flex-shrink-0 w-8 text-center">
-                        <span className="text-sm font-bold text-gray-600">
-                          {index + 1}.
-                        </span>
+                        {/* Rank Number */}
+                        <div className="flex-shrink-0 w-8 text-center flex items-center justify-center">
+                          <span className="text-sm font-bold text-gray-600">
+                            {index + 1}.
+                          </span>
+                        </div>
+
+                        {/* Party Color Dot */}
+                        <div className="flex items-center justify-center flex-shrink-0">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: getPartyColor(candidate.party) }}
+                          ></div>
+                        </div>
+
+                        {/* Follow Button */}
+                        <div className="flex items-center justify-center flex-shrink-0" onClick={(e) => e.preventDefault()}>
+                          <FollowButton
+                            candidateId={candidate.candidate_id}
+                            candidateName={candidate.name}
+                            party={candidate.party}
+                            office={candidate.office}
+                            state={candidate.state}
+                            district={candidate.district}
+                            size="sm"
+                          />
+                        </div>
                       </div>
-
-                      {/* Party Color Dot */}
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: getPartyColor(candidate.party) }}
-                      ></div>
 
                       {/* Candidate Info */}
                       <div className="flex-1 min-w-0">

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { formatCurrency, getPartyColor } from '../utils/formatters';
+import { FollowButton } from './follow/FollowButton';
 
 export function RaceTable({ data, metrics }) {
   const [sortConfig, setSortConfig] = useState({
@@ -48,6 +49,9 @@ export function RaceTable({ data, metrics }) {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
+            <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Watch
+            </th>
             <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Rank
             </th>
@@ -101,6 +105,17 @@ export function RaceTable({ data, metrics }) {
         <tbody className="bg-white divide-y divide-gray-200">
           {sortedData.map((candidate, index) => (
             <tr key={candidate.candidate_id} className="hover:bg-gray-50">
+              <td className="px-2 py-4 whitespace-nowrap text-center">
+                <FollowButton
+                  candidateId={candidate.candidate_id}
+                  candidateName={candidate.name}
+                  party={candidate.party}
+                  office={candidate.office}
+                  state={candidate.state}
+                  district={candidate.district}
+                  size="sm"
+                />
+              </td>
               <td className="px-2 py-4 whitespace-nowrap">
                 <div className="text-sm font-bold text-gray-900">
                   {index + 1}.

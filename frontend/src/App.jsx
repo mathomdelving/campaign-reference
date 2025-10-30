@@ -1,20 +1,26 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import { Navigation } from './components/layout/Navigation';
 import LeaderboardView from './views/LeaderboardView';
 import DistrictView from './views/DistrictView';
 import CandidateView from './views/CandidateView';
+import NotificationSettingsView from './views/NotificationSettingsView';
+import UnsubscribeView from './views/UnsubscribeView';
 
 function App() {
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
+    <AuthProvider>
+      <BrowserRouter>
+        <div className="min-h-screen bg-gray-50">
+          <Navigation />
 
         <Routes>
           <Route path="/" element={<LeaderboardView />} />
           <Route path="/leaderboard" element={<LeaderboardView />} />
           <Route path="/district" element={<DistrictView />} />
           <Route path="/candidate" element={<CandidateView />} />
+          <Route path="/settings" element={<NotificationSettingsView />} />
+          <Route path="/unsubscribe" element={<UnsubscribeView />} />
         </Routes>
 
         {/* Footer */}
@@ -27,8 +33,9 @@ function App() {
             </p>
           </div>
         </footer>
-      </div>
-    </BrowserRouter>
+        </div>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

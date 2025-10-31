@@ -84,7 +84,7 @@ function formatISODate(input?: string | null): string {
   return date.toISOString().slice(0, 10);
 }
 
-type ChartSeries = Array<{ quarter: string; [key: string]: number }>;
+type ChartSeries = Array<{ quarter: string } & { [key: string]: number | string }>;
 
 type PartyPayload = {
   scope: "party";

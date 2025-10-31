@@ -57,7 +57,12 @@ export async function GET(request: Request) {
       fullPage: false,
     });
 
-    return new NextResponse(image, {
+    const body =
+      image instanceof Buffer
+        ? image.buffer.slice(image.byteOffset, image.byteOffset + image.byteLength)
+        : image;
+
+    return new NextResponse(body, {
       status: 200,
       headers: {
         "Content-Type": "image/png",

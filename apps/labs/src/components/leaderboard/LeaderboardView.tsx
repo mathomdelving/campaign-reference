@@ -88,15 +88,15 @@ export function LeaderboardView() {
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-start gap-4">
-          <div className="flex flex-col gap-2" style={{ width: '110px' }}>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
               Cycle
             </label>
             <select
               value={filters.cycle}
               onChange={(event) => updateFilter("cycle", Number(event.target.value))}
-              className="h-[42px] border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none"
+              className="h-[42px] w-full border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none"
             >
               {CYCLES.map((cycle) => (
                 <option key={cycle} value={cycle}>
@@ -106,7 +106,7 @@ export function LeaderboardView() {
             </select>
           </div>
 
-          <div className="flex flex-col gap-2" style={{ width: '240px' }}>
+          <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1">
             <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
               Chamber
             </label>
@@ -137,14 +137,14 @@ export function LeaderboardView() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2" style={{ width: '140px' }}>
+          <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
               State
             </label>
             <select
               value={filters.state}
               onChange={(event) => updateFilter("state", event.target.value)}
-              className="h-[42px] border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none"
+              className="h-[42px] w-full border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none"
             >
               <option value="all">All States</option>
               {US_STATES.map((state) => (
@@ -155,7 +155,7 @@ export function LeaderboardView() {
             </select>
           </div>
 
-          <div className="flex flex-col gap-2" style={{ width: "220px" }}>
+          <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1">
             <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
               Party Filter
             </label>

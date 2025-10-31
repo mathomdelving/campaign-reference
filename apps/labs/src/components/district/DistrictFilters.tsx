@@ -62,15 +62,15 @@ export function DistrictFilters({
         </button>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-start gap-4">
-        <div className="flex flex-col gap-2" style={{ width: "140px" }}>
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex flex-col gap-2">
           <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
             State
           </label>
           <select
             value={state}
             onChange={(event) => onStateChange(event.target.value)}
-            className="h-[42px] border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-[42px] w-full border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
           >
             <option value="all">All States</option>
             {STATES.map((code) => (
@@ -81,7 +81,7 @@ export function DistrictFilters({
           </select>
         </div>
 
-        <div className="flex flex-col gap-2" style={{ width: "240px" }}>
+        <div className="flex flex-col gap-2">
           <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
             Chamber
           </label>
@@ -111,7 +111,7 @@ export function DistrictFilters({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2" style={{ width: "180px" }}>
+        <div className="flex flex-col gap-2">
           <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
             {chamber === "H" ? "District" : "Seat"}
           </label>
@@ -119,7 +119,7 @@ export function DistrictFilters({
             value={district}
             onChange={(event) => onDistrictChange(event.target.value)}
             disabled={state === "all"}
-            className="h-[42px] border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-[42px] w-full border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
           >
             <option value="all">
               {chamber === "H" ? "All Districts" : "All Seats"}
@@ -132,7 +132,7 @@ export function DistrictFilters({
           </select>
         </div>
 
-        <div className="flex flex-col gap-2" style={{ width: "220px" }}>
+        <div className="flex flex-col gap-2">
           <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
             Party Filter
           </label>

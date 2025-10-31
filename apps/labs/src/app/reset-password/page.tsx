@@ -1,10 +1,10 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
@@ -198,5 +198,29 @@ export default function ResetPasswordPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-rb-canvas px-4 py-16">
+          <div className="w-full max-w-md border-2 border-rb-brand-navy bg-white p-6 shadow-xl">
+            <h1 className="mb-2 font-display text-3xl font-semibold text-gray-900">
+              Reset Your Password
+            </h1>
+            <p className="mb-6 text-sm text-gray-600">
+              Enter a new password to finish resetting your Campaign Reference account.
+            </p>
+            <div className="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+              Loading reset form…
+            </div>
+          </div>
+        </main>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

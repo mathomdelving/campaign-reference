@@ -233,7 +233,7 @@ export function CommitteeView() {
 
       <section className="border-2 border-rb-brand-navy bg-white p-6 space-y-6 text-gray-900">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.3rem] text-gray-600">Metric</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">Metric</h2>
           <div className="flex border border-gray-300 bg-white p-1">
             {METRIC_OPTIONS.map((option) => {
               const active = metric === option.value;
@@ -241,7 +241,7 @@ export function CommitteeView() {
                 <button
                   key={option.value}
                   onClick={() => setMetric(option.value)}
-                  className={`px-4 py-2 text-xs font-semibold uppercase tracking-[0.2rem] transition ${
+                  className={`px-4 py-2 text-xs font-semibold uppercase tracking-[0.1rem] sm:tracking-[0.2rem] transition ${
                     active
                       ? "bg-rb-gold text-rb-brand-navy"
                       : "text-gray-600 hover:text-rb-brand-navy"
@@ -280,7 +280,7 @@ export function CommitteeView() {
                   >
                     <span>{result.label}</span>
                     {result.subtitle && (
-                      <span className="text-xs uppercase tracking-[0.25rem] text-gray-600">
+                      <span className="text-xs uppercase tracking-[0.15rem] sm:tracking-[0.25rem] text-gray-600">
                         {result.subtitle}
                       </span>
                     )}
@@ -298,7 +298,7 @@ export function CommitteeView() {
             <button
               key={entityKey(entity)}
               onClick={() => handleRemoveEntity(entity)}
-              className="inline-flex items-center gap-2 border border-gray-300 bg-white px-3 py-2 text-xs uppercase tracking-[0.2rem] text-rb-brand-navy transition hover:bg-gray-100"
+              className="inline-flex items-center gap-2 border border-gray-300 bg-white px-3 py-2 text-xs uppercase tracking-[0.1rem] sm:tracking-[0.2rem] text-rb-brand-navy transition hover:bg-gray-100"
             >
               <span>{entity.label}</span>
               <span className="text-gray-400">×</span>
@@ -308,7 +308,7 @@ export function CommitteeView() {
       </section>
 
       <section className="border-2 border-rb-brand-navy bg-white">
-        <div className="flex items-center justify-between border-b border-gray-200 p-6 text-sm uppercase tracking-[0.3rem] text-gray-600">
+        <div className="flex items-center justify-between border-b border-gray-200 p-6 text-sm uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
           <span>Quarterly Trend — {METRIC_OPTIONS.find((option) => option.value === metric)?.label}</span>
           <span>{selectedEntities.length} entities</span>
         </div>
@@ -330,7 +330,7 @@ export function CommitteeView() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.3rem] text-gray-600">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
           Latest Filing Snapshot
         </h2>
         <div className="grid gap-4 lg:grid-cols-3">
@@ -345,7 +345,7 @@ export function CommitteeView() {
                 className="border-2 border-rb-brand-navy bg-white p-5 text-gray-900"
               >
                 <div className="flex items-start justify-between">
-                  <div className="text-xs uppercase tracking-[0.3rem] text-gray-600">
+                  <div className="text-xs uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
                     {summary.label}
                   </div>
                   {summary.type === "candidate" && (
@@ -363,7 +363,7 @@ export function CommitteeView() {
                 <div className="mt-3 font-display text-2xl text-rb-brand-navy">
                   {formatCurrency(summary.value)}
                 </div>
-                <div className="mt-4 text-[10px] uppercase tracking-[0.3rem] text-gray-600">
+                <div className="mt-4 text-[10px] uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
                   Updated {summary.coverage ? summary.coverage.slice(0, 10) : "—"}
                 </div>
               </div>

@@ -314,7 +314,7 @@ export function DistrictView() {
       />
 
       <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4 text-sm uppercase tracking-[0.3rem] text-gray-600">
+        <div className="flex flex-wrap items-center justify-between gap-4 text-sm uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
           <span>
             {loading
               ? "Fetching candidates…"
@@ -322,14 +322,14 @@ export function DistrictView() {
           </span>
           <div className="flex items-center gap-3">
             {lastUpdated && (
-              <span className="tracking-[0.2rem]">
+              <span className="tracking-[0.1rem] sm:tracking-[0.2rem]">
                 Updated {new Date(lastUpdated).toLocaleDateString()}
               </span>
             )}
             <button
               onClick={handleWatchAll}
               disabled={watchingAll || sortedCandidates.length === 0}
-              className="inline-flex items-center justify-center rounded-md border border-rb-brand-navy px-4 py-2 text-xs font-semibold uppercase tracking-[0.2rem] text-rb-brand-navy transition hover:bg-rb-gold hover:text-rb-brand-navy disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-md border border-rb-brand-navy px-4 py-2 text-xs font-semibold uppercase tracking-[0.1rem] sm:tracking-[0.2rem] text-rb-brand-navy transition hover:bg-rb-gold hover:text-rb-brand-navy disabled:cursor-not-allowed disabled:opacity-60"
             >
               {watchingAll ? "Watching..." : "Watch All"}
             </button>
@@ -340,20 +340,22 @@ export function DistrictView() {
           {error ? (
             <div className="p-12 text-center text-sm text-red-600">{error}</div>
           ) : (
-            <div className="overflow-x-auto">
-              <CandidateGrid
-                candidates={sortedCandidates}
-                selected={activeCandidateIds}
-                onToggle={handleCandidateToggle}
-                metrics={metrics}
-              />
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[800px]">
+                <CandidateGrid
+                  candidates={sortedCandidates}
+                  selected={activeCandidateIds}
+                  onToggle={handleCandidateToggle}
+                  metrics={metrics}
+                />
+              </div>
             </div>
           )}
         </div>
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between text-sm uppercase tracking-[0.3rem] text-gray-600">
+        <div className="flex items-center justify-between text-sm uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
           <span>Quarterly Trend — {chartMetricLabel(chartMetric)}</span>
           <span>
             {quarterlyLoading

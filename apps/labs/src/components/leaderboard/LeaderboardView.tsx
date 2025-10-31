@@ -82,7 +82,7 @@ export function LeaderboardView() {
         <div className="flex justify-end">
           <button
             onClick={resetFilters}
-            className="text-xs font-semibold uppercase tracking-[0.25rem] text-gray-600 transition hover:text-rb-brand-navy"
+            className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.25rem] text-gray-600 transition hover:text-rb-brand-navy"
           >
             Reset All
           </button>
@@ -90,7 +90,7 @@ export function LeaderboardView() {
 
         <div className="mt-4 flex flex-wrap items-start gap-4">
           <div className="flex flex-col gap-2" style={{ width: '110px' }}>
-            <label className="text-xs font-semibold uppercase tracking-[0.3rem] text-gray-600">
+            <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
               Cycle
             </label>
             <select
@@ -107,7 +107,7 @@ export function LeaderboardView() {
           </div>
 
           <div className="flex flex-col gap-2" style={{ width: '240px' }}>
-            <label className="text-xs font-semibold uppercase tracking-[0.3rem] text-gray-600">
+            <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
               Chamber
             </label>
             <div className="flex h-[42px] gap-2">
@@ -138,7 +138,7 @@ export function LeaderboardView() {
           </div>
 
           <div className="flex flex-col gap-2" style={{ width: '140px' }}>
-            <label className="text-xs font-semibold uppercase tracking-[0.3rem] text-gray-600">
+            <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
               State
             </label>
             <select
@@ -156,7 +156,7 @@ export function LeaderboardView() {
           </div>
 
           <div className="flex flex-col gap-2" style={{ width: "220px" }}>
-            <label className="text-xs font-semibold uppercase tracking-[0.3rem] text-gray-600">
+            <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
               Party Filter
             </label>
             <div className="flex h-[42px] gap-2">
@@ -244,7 +244,7 @@ export function LeaderboardView() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-xs uppercase tracking-[0.3rem] text-rb-grey">
+            <span className="text-xs uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-rb-grey">
               {loading
                 ? "Loading..."
                 : `Showing ${filteredData.length.toLocaleString()} candidates`}
@@ -267,8 +267,10 @@ export function LeaderboardView() {
               Loading campaign finance data…
             </div>
           ) : viewMode === "table" ? (
-            <div className="overflow-x-auto">
-              <RaceTable data={filteredData} metrics={filters.metrics} />
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[800px]">
+                <RaceTable data={filteredData} metrics={filters.metrics} />
+              </div>
             </div>
           ) : (
             <div className="p-6">

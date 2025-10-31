@@ -51,12 +51,12 @@ export function DistrictFilters({
   return (
     <section className="border-2 border-rb-brand-navy bg-white p-6 text-gray-900">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <span className="text-xs font-semibold uppercase tracking-[0.3rem] text-gray-600">
+        <span className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
           {summaryLabel}
         </span>
         <button
           onClick={onReset}
-          className="text-xs font-semibold uppercase tracking-[0.25rem] text-gray-600 transition hover:text-rb-brand-navy"
+          className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.25rem] text-gray-600 transition hover:text-rb-brand-navy"
         >
           Reset All
         </button>
@@ -64,7 +64,7 @@ export function DistrictFilters({
 
       <div className="mt-4 flex flex-wrap items-start gap-4">
         <div className="flex flex-col gap-2" style={{ width: "140px" }}>
-          <label className="text-xs font-semibold uppercase tracking-[0.3rem] text-gray-600">
+          <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
             State
           </label>
           <select
@@ -82,7 +82,7 @@ export function DistrictFilters({
         </div>
 
         <div className="flex flex-col gap-2" style={{ width: "240px" }}>
-          <label className="text-xs font-semibold uppercase tracking-[0.3rem] text-gray-600">
+          <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
             Chamber
           </label>
           <div className="flex h-[42px] gap-2">
@@ -112,7 +112,7 @@ export function DistrictFilters({
         </div>
 
         <div className="flex flex-col gap-2" style={{ width: "180px" }}>
-          <label className="text-xs font-semibold uppercase tracking-[0.3rem] text-gray-600">
+          <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
             {chamber === "H" ? "District" : "Seat"}
           </label>
           <select
@@ -133,7 +133,7 @@ export function DistrictFilters({
         </div>
 
         <div className="flex flex-col gap-2" style={{ width: "220px" }}>
-          <label className="text-xs font-semibold uppercase tracking-[0.3rem] text-gray-600">
+          <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
             Party Filter
           </label>
           <div className="flex h-[42px] gap-2">

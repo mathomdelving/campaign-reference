@@ -57,9 +57,19 @@ export async function GET(request: Request) {
       fullPage: false,
     });
 
-    const body: Uint8Array = typeof screenshot === "string"
-      ? new Uint8Array(Buffer.from(screenshot, "base64"))
-      : new Uint8Array(screenshot);
+    let buffer: Buffer;
+    if (typeof screenshot === "string") {
+      buffer = Buffer.from(screenshot, "base64");
+    } else if (screenshot instanceof ArrayBuffer) {
+      buffer = Buffer.from(screenshot);
+    } else {
+      buffer = screenshot;
+    }
+
+    const body = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    );
 
     return new NextResponse(body, {
       status: 200,

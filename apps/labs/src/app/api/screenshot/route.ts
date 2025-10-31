@@ -59,7 +59,9 @@ export async function GET(request: Request) {
 
     const body =
       image instanceof Buffer
-        ? image.buffer.slice(image.byteOffset, image.byteOffset + image.byteLength)
+        ? Uint8Array.from(image)
+        : image instanceof ArrayBuffer
+        ? new Uint8Array(image)
         : image;
 
     return new NextResponse(body, {

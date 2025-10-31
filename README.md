@@ -11,11 +11,20 @@ Real-time FEC data visualization with automated daily updates.
 
 ## 🚀 Quick Start
 
-### Development Server
-```bash
-cd frontend
-npm run dev
-```
+### Development Servers
+- **Next.js Labs UI (production site)**
+  ```bash
+  cd apps/labs
+  npm install
+  npm run dev
+  ```
+
+- **Legacy Vite UI (archived)**
+  ```bash
+  cd frontend
+  npm install
+  npm run dev
+  ```
 
 ### Monitor Automated Data Updates
 Data automatically updates daily at 6 AM ET via GitHub Actions. Check logs:
@@ -33,7 +42,16 @@ gh run view --log
 
 ```
 campaign-reference/
-├── frontend/              # React + Vite application
+├── apps/
+│   └── labs/              # Next.js App Router application (production UI)
+│       ├── src/
+│       │   ├── app/      # Route segments
+│       │   ├── components/ # Auth, layout, tables, etc.
+│       │   ├── hooks/    # Supabase data hooks
+│       │   └── utils/    # Formatting + chart helpers
+│       └── ...
+│
+├── frontend/              # React + Vite application (legacy, archived)
 │   ├── src/
 │   │   ├── components/   # UI components
 │   │   ├── hooks/        # Custom React hooks
@@ -83,11 +101,11 @@ campaign-reference/
 
 ## 🎯 Features
 
-1. **Leaderboard View** - Top fundraisers with sortable columns
-2. **By District** - Compare all candidates within a specific House district or Senate seat
-3. **By Candidate** - Search and compare candidates across different races
-4. **Quarterly Trends** - Historical financial data with interactive charts
-5. **Data Export** - Export tables and charts to CSV/PNG
+1. **Leaderboard View** – Top fundraisers with sortable columns and CSV export
+2. **By District** – Compare all candidates within a specific House district or Senate seat
+3. **By Committee** – National committee drilldowns with quarterly trends
+4. **Watchlists & Notifications** – Follow up to 50 candidates and toggle email alerts
+5. **Auth & Google OAuth** – Supabase-powered email/password and Google sign-in
 
 ---
 
@@ -118,7 +136,16 @@ campaign-reference/
 
 ## 🔧 Tech Stack
 
-### Frontend
+### Frontend (production)
+- Next.js 16 (App Router, Turbopack)
+- React 19
+- Tailwind CSS 4 (with project-specific tokens)
+- shadcn/ui + Radix primitives
+- Recharts 3.3.0
+- Supabase JS Client 2.76.1
+- Playwright (local only, future share flow – currently disabled)
+
+### Legacy Frontend (archived)
 - React 19.1.1
 - Vite 7.1.7
 - Tailwind CSS 3.4.18
@@ -181,7 +208,24 @@ python3 load_to_supabase.py
 
 **Note:** Data updates are automated via GitHub Actions. Manual runs are only needed for testing or ad-hoc updates.
 
-### Frontend Development
+### Frontend Development (Next.js Labs)
+```bash
+cd apps/labs
+
+# Install dependencies
+npm install
+
+# Start dev server (localhost:3000)
+npm run dev
+
+# Build for production
+npm run build
+
+# Type check
+npm run lint && npx tsc --noEmit
+```
+
+### Legacy Frontend (Vite)
 ```bash
 cd frontend
 

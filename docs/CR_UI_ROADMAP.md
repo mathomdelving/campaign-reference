@@ -9,7 +9,7 @@
 2. **Premium Components**: shadcn/ui + Radix primitives themed for dark financial UI.
 3. **Newsroom‑quality charts**: Reusable `<CRLineChart />` & `<CRBarChart />` with disciplined grid, ticks, labels, and annotations.
 4. **Partisan but muted** color scheme; neutrals for frame; emphasis on data.
-5. **One‑click share**: static 1200×675 (2× retina) PNG export from a dedicated `/share/*` route + Open Graph generation.
+5. **One-click share** *(deferred)*: static 1200×675 (2× retina) PNG export from a dedicated `/share/*` route + Open Graph generation.
 6. **Accessibility & performance**: sensible motion, tabular numerals, and predictable loading.
 7. **QA checklist**: every new chart or card meets screenshot standards before merge.
 

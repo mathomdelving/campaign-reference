@@ -1,11 +1,12 @@
 # Release Notes
 
-## v2.0.0 – Next.js Labs UI (pending)
+## v2.0.0 – Next.js Labs UI
 
 - Migrated the dashboard from the legacy Vite SPA to the new Next.js Labs application (`apps/labs`).
 - Introduced Supabase-backed auth flows, including Google OAuth, password resets, and watchlist management.
 - Added dedicated notification settings and bulk follow tooling.
 - Updated Supabase/Google OAuth redirect URLs and Vercel environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_LABS_BASE_URL`).
+- Deferred the experimental Playwright/OG share routes until the post-launch cycle (removed from the production build to keep deployments stable).
 
 ## v1.0.0 – Vite UI (archived)
 

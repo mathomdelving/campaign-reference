@@ -21,6 +21,28 @@ export const metadata: Metadata = {
   title: "Campaign Reference Labs",
   description:
     "Campaign Reference visualization workspace for premium charts and export tooling.",
+  openGraph: {
+    title: "Campaign Reference",
+    description:
+      "Campaign finance dashboards for 2026 House and Senate races with watchlists and alerts.",
+    url: "https://campaign-reference.com",
+    siteName: "Campaign Reference",
+    images: [
+      {
+        url: "/campaign-reference-thumbnail.png",
+        width: 1200,
+        height: 630,
+        alt: "Campaign Reference thumbnail",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Campaign Reference",
+    description:
+      "Campaign finance dashboards for 2026 House and Senate races with watchlists and alerts.",
+    images: ["/campaign-reference-thumbnail.png"],
+  },
 };
 
 export default function RootLayout({

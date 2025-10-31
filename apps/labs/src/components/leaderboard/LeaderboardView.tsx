@@ -209,41 +209,41 @@ export function LeaderboardView() {
       </section>
 
       <section className="border-2 border-rb-brand-navy bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-4 p-6">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setViewMode("table")}
-              className={`px-4 py-2 text-sm font-semibold uppercase tracking-[0.2rem] transition ${
+              className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold uppercase tracking-[0.1rem] sm:tracking-[0.2rem] transition ${
                 viewMode === "table"
                   ? "bg-rb-gold text-rb-brand-navy"
                   : "text-gray-600 hover:text-rb-brand-navy"
               }`}
             >
-              <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 sm:gap-2">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                Table
+                <span className="hidden sm:inline">Table</span>
               </span>
             </button>
             <button
               onClick={() => setViewMode("chart")}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold uppercase tracking-[0.2rem] transition ${
+              className={`rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold uppercase tracking-[0.1rem] sm:tracking-[0.2rem] transition ${
                 viewMode === "chart"
                   ? "bg-rb-red text-white"
                   : "text-rb-grey hover:text-rb-brand-navy"
               }`}
             >
-              <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 sm:gap-2">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                Chart
+                <span className="hidden sm:inline">Chart</span>
               </span>
             </button>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <span className="text-xs uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-rb-grey">
               {loading
                 ? "Loading..."

@@ -96,11 +96,11 @@ function CRLineChartComponent({
   }, [resolvedSeries, series]);
 
   return (
-    <div className="h-full w-full rounded-2xl border border-rb-border bg-rb-white p-6">
+    <div className="h-full w-full rounded-2xl border border-rb-border bg-rb-white p-3 sm:p-6">
       <ResponsiveContainer width="100%" height={height}>
         <LineChart
           data={data}
-          margin={{ top: 24, right: 24, bottom: 16, left: 12 }}
+          margin={{ top: 16, right: 8, bottom: 12, left: 4 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#B0B0B0" opacity={0.4} />
           <XAxis

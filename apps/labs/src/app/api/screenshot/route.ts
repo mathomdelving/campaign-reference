@@ -52,17 +52,14 @@ export async function GET(request: Request) {
     await page.goto(targetUrl, { waitUntil: "networkidle" });
     await page.waitForTimeout(500);
 
-    const image = await page.screenshot({
+    const screenshot = await page.screenshot({
       type: "png",
       fullPage: false,
     });
 
-    const body =
-      image instanceof Buffer
-        ? Uint8Array.from(image)
-        : image instanceof ArrayBuffer
-        ? new Uint8Array(image)
-        : image;
+    const body: Uint8Array = typeof screenshot === "string"
+      ? new Uint8Array(Buffer.from(screenshot, "base64"))
+      : new Uint8Array(screenshot);
 
     return new NextResponse(body, {
       status: 200,

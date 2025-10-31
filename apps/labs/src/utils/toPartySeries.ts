@@ -53,7 +53,7 @@ export function toPartySeries(
     if (!quarter) continue;
 
     const normalizedParty = (record.party || "").trim().toUpperCase();
-    const key = (PARTY_KEYS as Record<string, keyof PartySeriesDatum | undefined>)[normalizedParty];
+    const key = (PARTY_KEYS as Record<string, keyof Omit<PartySeriesDatum, "quarter"> | undefined>)[normalizedParty];
     if (!key) continue;
 
     const value = getMetricValue(record, metric);

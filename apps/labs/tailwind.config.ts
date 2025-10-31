@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-const config: Config = {
+const config = {
   darkMode: "class",
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
@@ -53,6 +53,6 @@ const config: Config = {
     },
   },
   plugins: [],
-};
+} satisfies Config & { safelist: string[] };
 
 export default config;

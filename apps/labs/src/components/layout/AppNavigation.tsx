@@ -8,7 +8,6 @@ const NAV_ITEMS = [
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/district", label: "By District" },
   { href: "/committee", label: "By Committee" },
-  { href: "/share/party-receipts-2026", label: "Share Routes" },
 ];
 
 export function AppNavigation() {

@@ -27,6 +27,13 @@ const COMMITTEE_IDS = {
   nrsc: "C00027466",
 } as const;
 
+const COMMITTEE_LABELS: Record<keyof typeof COMMITTEE_IDS, string> = {
+  dccc: "DCCC",
+  dscc: "DSCC",
+  nrcc: "NRCC",
+  nrsc: "NRSC",
+};
+
 export type CommitteeSlug = keyof typeof COMMITTEE_IDS;
 
 export interface CommitteeSummary {
@@ -158,16 +165,5 @@ function mapCommitteeId(committeeId?: string | null): CommitteeSlug | null {
 }
 
 function committeeLabel(slug: CommitteeSlug) {
-  switch (slug) {
-    case "dccc":
-      return "DCCC";
-    case "dscc":
-      return "DSCC";
-    case "nrcc":
-      return "NRCC";
-    case "nrsc":
-      return "NRSC";
-    default:
-      return slug.toUpperCase();
-  }
+  return COMMITTEE_LABELS[slug] ?? slug.toUpperCase();
 }

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { LeaderboardCandidate } from "@/hooks/useCandidateData";
 import type { MetricToggles } from "@/hooks/useFilters";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatCompactCurrency } from "@/utils/formatters";
 import { FollowButton } from "@/components/follow/FollowButton";
 
 type SortKey = "totalReceipts" | "totalDisbursements" | "cashOnHand";
@@ -39,14 +39,25 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
     }));
   };
 
-  const renderSortGlyph = (column: SortKey) => {
+  const renderSortIcon = (column: SortKey) => {
     if (sortConfig.key !== column) {
-      return <span className="text-rb-grey opacity-40">↕</span>;
+      // Unsorted - show up/down arrows
+      return (
+        <svg className="w-4 h-4 text-rb-grey opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
+      );
     }
     return sortConfig.direction === "asc" ? (
-      <span className="text-rb-brand-navy">↑</span>
+      // Ascending - up arrow
+      <svg className="w-4 h-4 text-rb-brand-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+      </svg>
     ) : (
-      <span className="text-rb-brand-navy">↓</span>
+      // Descending - down arrow
+      <svg className="w-4 h-4 text-rb-brand-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
     );
   };
 
@@ -75,7 +86,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
             >
               <span className="inline-flex items-center justify-end gap-2">
                 Total Raised
-                {renderSortGlyph("totalReceipts")}
+                {renderSortIcon("totalReceipts")}
               </span>
             </th>
           )}
@@ -86,7 +97,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
             >
               <span className="inline-flex items-center justify-end gap-2">
                 Total Spent
-                {renderSortGlyph("totalDisbursements")}
+                {renderSortIcon("totalDisbursements")}
               </span>
             </th>
           )}
@@ -97,7 +108,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
             >
               <span className="inline-flex items-center justify-end gap-2">
                 Cash on Hand
-                {renderSortGlyph("cashOnHand")}
+                {renderSortIcon("cashOnHand")}
               </span>
             </th>
           )}
@@ -143,18 +154,27 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
                 : "—"}
             </td>
             {metrics.totalRaised && (
-              <td className="px-8 py-4 text-right font-medium text-rb-black">
-                {formatCurrency(candidate.totalReceipts)}
+              <td
+                className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                title={formatCurrency(candidate.totalReceipts)}
+              >
+                {formatCompactCurrency(candidate.totalReceipts)}
               </td>
             )}
             {metrics.totalDisbursed && (
-              <td className="px-8 py-4 text-right font-medium text-rb-black">
-                {formatCurrency(candidate.totalDisbursements)}
+              <td
+                className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                title={formatCurrency(candidate.totalDisbursements)}
+              >
+                {formatCompactCurrency(candidate.totalDisbursements)}
               </td>
             )}
             {metrics.cashOnHand && (
-              <td className="px-8 py-4 text-right font-medium text-rb-black">
-                {formatCurrency(candidate.cashOnHand)}
+              <td
+                className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                title={formatCurrency(candidate.cashOnHand)}
+              >
+                {formatCompactCurrency(candidate.cashOnHand)}
               </td>
             )}
           </tr>

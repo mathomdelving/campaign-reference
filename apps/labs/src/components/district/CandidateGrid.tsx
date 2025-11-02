@@ -2,7 +2,7 @@
 
 import type { DistrictCandidate } from "@/hooks/useDistrictCandidates";
 import { FollowButton } from "@/components/follow/FollowButton";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatCompactCurrency } from "@/utils/formatters";
 
 interface CandidateGridProps {
   candidates: DistrictCandidate[];
@@ -108,18 +108,27 @@ export function CandidateGrid({
                 </span>
               </td>
               {metrics.totalRaised && (
-                <td className="px-8 py-4 text-right font-medium text-rb-black">
-                  {formatCurrency(candidate.totalRaised)}
+                <td
+                  className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                  title={formatCurrency(candidate.totalRaised)}
+                >
+                  {formatCompactCurrency(candidate.totalRaised)}
                 </td>
               )}
               {metrics.totalDisbursed && (
-                <td className="px-8 py-4 text-right font-medium text-rb-black">
-                  {formatCurrency(candidate.totalDisbursed)}
+                <td
+                  className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                  title={formatCurrency(candidate.totalDisbursed)}
+                >
+                  {formatCompactCurrency(candidate.totalDisbursed)}
                 </td>
               )}
               {metrics.cashOnHand && (
-                <td className="px-8 py-4 text-right font-medium text-rb-black">
-                  {formatCurrency(candidate.cashOnHand)}
+                <td
+                  className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                  title={formatCurrency(candidate.cashOnHand)}
+                >
+                  {formatCompactCurrency(candidate.cashOnHand)}
                 </td>
               )}
             </tr>

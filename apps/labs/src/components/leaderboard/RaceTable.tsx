@@ -70,18 +70,15 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
   }
 
   return (
-    <table className="w-full table-fixed border-collapse text-sm text-rb-black">
+    <table className="w-full border-collapse text-sm text-rb-black">
       <thead className="border-b-2 border-rb-border bg-gray-50">
         <tr>
           <th className="w-12 px-2 py-3"></th>
           <th className="w-12 px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-rb-grey">Rank</th>
-          <th className="w-[220px] px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-rb-grey">Candidate</th>
-          <th className="w-16 px-1 py-3 text-center text-xs font-semibold uppercase tracking-wider text-rb-grey">Party</th>
-          <th className="w-16 px-1 py-3 text-center text-xs font-semibold uppercase tracking-wider text-rb-grey">State</th>
-          <th className="w-20 px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-rb-grey">District</th>
+          <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-rb-grey">Candidate</th>
           {metrics.totalRaised && (
             <th
-              className="px-8 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
+              className="w-1/4 px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
               onClick={() => handleSort("totalReceipts")}
             >
               <span className="inline-flex items-center justify-end gap-2">
@@ -92,7 +89,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
           )}
           {metrics.totalDisbursed && (
             <th
-              className="px-8 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
+              className="w-1/4 px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
               onClick={() => handleSort("totalDisbursements")}
             >
               <span className="inline-flex items-center justify-end gap-2">
@@ -103,7 +100,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
           )}
           {metrics.cashOnHand && (
             <th
-              className="px-8 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
+              className="w-1/4 px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
               onClick={() => handleSort("cashOnHand")}
             >
               <span className="inline-flex items-center justify-end gap-2">
@@ -132,30 +129,21 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
               />
             </td>
             <td className="w-12 px-2 py-4 text-center font-medium text-rb-black">{index + 1}.</td>
-            <td className="w-[220px] px-3 py-4">
+            <td className="px-3 py-4">
               <div className="font-semibold text-rb-black">{candidate.name}</div>
-              <div className="text-xs text-rb-grey">
-                {candidate.candidate_id}
+              <div className="text-xs text-rb-grey flex items-center gap-1.5">
+                <span>{candidate.candidate_id}</span>
+                <span>•</span>
+                <span className={getPartyTextColor(candidate.party)}>
+                  {formatPartyLabel(candidate.party)}
+                </span>
+                <span>•</span>
+                <span>{formatDistrictLabel(candidate)}</span>
               </div>
-            </td>
-            <td className="w-16 px-1 py-4 text-center">
-              <span className={partyLinkClasses(candidate.party)}>
-                {formatPartyLabel(candidate.party)}
-              </span>
-            </td>
-            <td className="w-16 px-1 py-4 text-center font-medium text-rb-black">
-              {candidate.state ?? "—"}
-            </td>
-            <td className="w-20 px-2 py-4 text-center font-medium text-rb-black">
-              {candidate.office === "H"
-                ? candidate.district ?? "—"
-                : candidate.office === "S"
-                ? "SEN"
-                : "—"}
             </td>
             {metrics.totalRaised && (
               <td
-                className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                className="w-1/4 px-6 py-4 text-right text-base font-semibold text-rb-black cursor-help"
                 title={formatCurrency(candidate.totalReceipts)}
               >
                 {formatCompactCurrency(candidate.totalReceipts)}
@@ -163,7 +151,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
             )}
             {metrics.totalDisbursed && (
               <td
-                className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                className="w-1/4 px-6 py-4 text-right text-base font-semibold text-rb-black cursor-help"
                 title={formatCurrency(candidate.totalDisbursements)}
               >
                 {formatCompactCurrency(candidate.totalDisbursements)}
@@ -171,7 +159,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
             )}
             {metrics.cashOnHand && (
               <td
-                className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                className="w-1/4 px-6 py-4 text-right text-base font-semibold text-rb-black cursor-help"
                 title={formatCurrency(candidate.cashOnHand)}
               >
                 {formatCompactCurrency(candidate.cashOnHand)}
@@ -193,15 +181,26 @@ function formatPartyLabel(party?: string | null) {
   return party;
 }
 
-function partyLinkClasses(party?: string | null) {
+function getPartyTextColor(party?: string | null) {
   const normalized = (party ?? "").toUpperCase();
-  const baseClasses = "font-medium hover:underline cursor-pointer";
 
   if (normalized.includes("DEM")) {
-    return `${baseClasses} text-blue-600`;
+    return "text-blue-600 font-medium";
   }
   if (normalized.includes("REP")) {
-    return `${baseClasses} text-red-600`;
+    return "text-red-600 font-medium";
   }
-  return `${baseClasses} text-yellow-600`;
+  return "text-yellow-600 font-medium";
+}
+
+function formatDistrictLabel(candidate: LeaderboardCandidate) {
+  const state = candidate.state ?? "";
+  if (candidate.office === "H") {
+    const district = candidate.district ?? "";
+    return `${state}-${district}`;
+  }
+  if (candidate.office === "S") {
+    return `${state}-SEN`;
+  }
+  return state || "—";
 }

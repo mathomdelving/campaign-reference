@@ -11,20 +11,14 @@ Real-time FEC data visualization with automated daily updates.
 
 ## 🚀 Quick Start
 
-### Development Servers
-- **Next.js Labs UI (production site)**
-  ```bash
-  cd apps/labs
-  npm install
-  npm run dev
-  ```
+### Development Server
+```bash
+cd apps/labs
+npm install
+npm run dev
+```
 
-- **Legacy Vite UI (archived)**
-  ```bash
-  cd frontend
-  npm install
-  npm run dev
-  ```
+The app will be available at [http://localhost:3000](http://localhost:3000)
 
 ### Monitor Automated Data Updates
 Data automatically updates daily at 6 AM ET via GitHub Actions. Check logs:
@@ -50,13 +44,6 @@ campaign-reference/
 │       │   ├── hooks/    # Supabase data hooks
 │       │   └── utils/    # Formatting + chart helpers
 │       └── ...
-│
-├── frontend/              # React + Vite application (legacy, archived)
-│   ├── src/
-│   │   ├── components/   # UI components
-│   │   ├── hooks/        # Custom React hooks
-│   │   └── utils/        # Helper functions
-│   └── ...
 │
 ├── docs/                  # Documentation
 │   ├── ROADMAP.md                     # Project roadmap and phases
@@ -225,23 +212,6 @@ npm run build
 npm run lint && npx tsc --noEmit
 ```
 
-### Legacy Frontend (Vite)
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start dev server (localhost:5173)
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-```
-
 ---
 
 ## 📝 Environment Variables
@@ -255,8 +225,8 @@ SUPABASE_KEY=your_supabase_service_role_key
 
 ### Vercel Environment Variables
 ```
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_public_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_public_key
 ```
 
 ### Local Development (.env files)
@@ -268,10 +238,10 @@ SUPABASE_URL=your_supabase_project_url
 SUPABASE_KEY=your_supabase_service_role_key
 ```
 
-**Frontend (frontend/.env):**
+**Frontend (apps/labs/.env.local):**
 ```
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_public_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_public_key
 ```
 
 ---

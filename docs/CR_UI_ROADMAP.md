@@ -4,7 +4,32 @@
 
 ---
 
-## 0) Outcomes (Definition of “Done”)
+## 📊 Implementation Status (Updated: Nov 3, 2025)
+
+Campaign Reference has **two parallel UI implementations**:
+
+| Environment | Stack | Overall Progress | Status |
+|------------|-------|------------------|--------|
+| **Production** (`/frontend`) | Vite + React | ~~30%~~ | ❌ Deprecated (Oct 2025) |
+| **Labs** (`/apps/labs`) | Next.js + TypeScript | **40%** | ✅ LIVE at campaign-reference.com |
+
+### Quick Status by Phase
+
+| Phase | Production | Labs | Priority |
+|-------|-----------|------|----------|
+| **Phase A** (Foundations) | 30% | 60% | 🔴 High |
+| **Phase B** (Share & Export) | 40% | ❌ 0% (removed) | 🟡 Medium (deferred) |
+| **Phase C** (Storytelling) | 20% | 20% | 🟡 Medium |
+| **Phase D** (Server Output) | 0% | 0% | 🟢 Low |
+| **Phase E** (Visx) | 0% | 0% | ⚪ Deferred |
+
+**Note:** Phase B (share cards) was attempted but removed in Oct 2025 due to persistent technical issues. May be revisited in the future.
+
+**See detailed audit:** [UI_IMPLEMENTATION_STATUS.md](./UI_IMPLEMENTATION_STATUS.md)
+
+---
+
+## 0) Outcomes (Definition of "Done")
 1. **Consistent Brand**: Color/typography tokens power UI and charts from one source of truth.
 2. **Premium Components**: shadcn/ui + Radix primitives themed for dark financial UI.
 3. **Newsroom‑quality charts**: Reusable `<CRLineChart />` & `<CRBarChart />` with disciplined grid, ticks, labels, and annotations.
@@ -365,31 +390,40 @@ export function KPI({ label, value, delta }: { label: string; value: string; del
 
 ## 11) Implementation Phases (Tickets)
 
-### Phase A — Foundations
-- [ ] Add tokens.ts & chartTheme.ts; wire Tailwind colors & fonts.
-- [ ] Install shadcn/ui baseline: Card, Tabs, Tooltip, Dropdown, Dialog, Table.
-- [ ] Create KPI and DataTable components with tabular numerals.
-- [ ] Create CRLineChart/CRBarChart using Recharts + theme.
+### Phase A — Foundations (Production: 30% | Labs: 60%)
+- [x] **Labs:** ✅ Add chartTheme.ts; wire Tailwind colors & fonts (`/apps/labs/src/lib/chartTheme.ts`)
+- [ ] **Both:** ❌ Add tokens.ts (colors in tailwind.config only)
+- [x] **Labs:** ✅ Install shadcn/ui baseline: Tooltip, Dropdown, Dialog (`package.json`)
+- [ ] **Labs:** ⏳ Missing: Card, Tabs, Table components
+- [ ] **Both:** ❌ Create KPI component
+- [ ] **Both:** ⚠️ DataTable components exist but custom (not TanStack)
+- [x] **Labs:** ✅ Create CRLineChart using Recharts + theme (`/apps/labs/src/components/CRLineChart.tsx`)
+- [x] **Production:** ⚠️ Basic RaceChart/QuarterlyChart (no chartTheme integration)
 
-### Phase B — Share & Export
-- [ ] Build CRShareCard (1200×675); add brand header/footer.
-- [ ] Add client `exportNodeToPng` (+ “Download PNG” button).
-- [ ] Create `/share/[slug]` route that renders CRShareCard only.
+### Phase B — Share & Export (Production: ~~40%~~ Deprecated | Labs: ❌ 0% - Removed)
+- [ ] **Labs:** ❌ ShareCard removed - had persistent technical issues (Oct 2025)
+- [ ] **Labs:** ❌ `/share/*` routes removed
+- [ ] **Labs:** ❌ `/api/screenshot` removed (directory exists but empty)
+- [ ] **Labs:** ❌ `/og` route removed
+- [ ] **Both:** ⏸️ **Phase B deferred** - May revisit share/export features in future
+- [ ] **Production:** ❌ Deprecated (entire /frontend removed)
 
-### Phase C — Precision & Storytelling
-- [ ] Add Annotation primitives & reference lines (FEC deadlines, primaries).
-- [ ] Introduce small multiples for head‑to‑head comparisons.
-- [ ] Add comparison mode (candidate A vs B vs race avg).
+### Phase C — Precision & Storytelling (Both: 20%)
+- [ ] **Both:** ❌ Add Annotation primitives & reference lines
+- [ ] **Both:** ❌ Introduce small multiples
+- [x] **Both:** ⚠️ Partial comparison mode (can compare candidates, but not vs race avg)
 
-### Phase D — Server‑Grade Output
-- [ ] Playwright script to screenshot `/share/[slug]` at 1× and 2×.
-- [ ] Add `@vercel/og` endpoint for social share previews.
-- [ ] S3 (or local) persistence + cache headers.
+### Phase D — Server‑Grade Output (Production: 0% | Labs: 0% - Removed)
+- [ ] **Labs:** ❌ Playwright script removed (was at `/api/screenshot`)
+- [ ] **Labs:** ❌ @vercel/og endpoint removed (was at `/og`)
+- [ ] **Labs:** ❌ S3 persistence - not implemented
+- [ ] **Labs:** ❌ Cache headers - not configured
+- [ ] **Both:** ⏸️ **Phase D deferred** - Depends on Phase B implementation
 
-### Phase E — Visx Migration (optional)
-- [ ] Port CRLineChart/CRBarChart to Visx for full control.
-- [ ] Custom axes/ticks/annotation layer; reference band support.
-- [ ] Performance profiling (React Profiler) + memoization.
+### Phase E — Visx Migration (Both: 0% - Deferred)
+- [ ] **Both:** ❌ Port charts to Visx
+- [ ] **Both:** ❌ Custom axes/ticks/annotation layer
+- [ ] **Both:** ❌ Performance profiling + memoization
 
 ---
 
@@ -471,19 +505,57 @@ export const demoSeries = [
 
 ---
 
-## 19) Current Status — UI Parity Pass *(Oct 31, 2025)*
-- Leaderboard and By District filters now share the same 42px control system with inline metric toggles (Total Raised/Spent/Cash) instead of the dropdown.
-- Party filter pills are consistent across both surfaces—active states fill with gold, inactive states stay white with navy hover.
-- Subtitle pattern aligned: each view stacks `h1` + descriptive `p` before the status badges for a newsroom tone.
-- Next.js and Vite implementations mirror each other, so future styling updates can ship by touching the shared patterns once.
+## 19) Current Status — Implementation Audit *(Nov 3, 2025)*
+
+### Migration Complete (Oct 31, 2025)
+
+**❌ DEPRECATED:** `/frontend/` (Vite + React)
+- Migrated to Next.js on Oct 31, 2025
+- Code preserved in `legacy/vite-ui` branch and `v1.0.0-vite` tag
+- Recommended action: Remove from main branch (see MIGRATION_CLEANUP_PLAN.md)
+
+**✅ PRODUCTION:** `/apps/labs/` (Next.js + TypeScript)
+- **LIVE at:** https://campaign-reference.com
+- 40% roadmap completion
+- Has: chartTheme.ts, CRLineChart, Radix UI, Framer Motion, auth, follow system
+- Missing: KPI cards, TanStack Table, annotations, small multiples
+
+### Key Achievements
+1. ✅ Full Red Bull Racing design palette in Tailwind config
+2. ✅ Type-safe CRLineChart with chartTheme integration
+3. ✅ Next.js App Router with TypeScript
+4. ✅ Radix UI primitives integrated
+5. ✅ Auth and follow system complete
+
+### What Was Removed
+- ❌ **Share cards** - Attempted but removed due to persistent technical issues
+- ❌ **Screenshot API** - Part of share card system, removed
+- ❌ **OG image generation** - Part of share card system, removed
+- ⏸️ **May revisit** - Phase B/D features deferred to future
+
+### UI Parity Notes *(Oct 31, 2025)*
+- Leaderboard and By District filters share the same 42px control system
+- Party filter pills consistent across both surfaces
+- Next.js (Labs) and Vite (Production) implementations mirror each other for core views
+- Future styling updates can ship by touching shared patterns once
+
+### Next Priorities
+1. **🔴 URGENT: Remove `/frontend` directory** (see MIGRATION_CLEANUP_PLAN.md)
+2. **Complete Phase A:** Add KPI card, tokens.ts, missing shadcn components
+3. **Add Phase C:** Build annotation primitives and small multiples
+4. **Consider Phase B/D:** Revisit share cards if needed in future
 
 ---
 
-**Questions saved for later**  
-- Do we standardize cumulative vs per‑quarter series sitewide?  
-- Do we provide a “publication mode” with enlarged labels & margins for print?
+**Questions for Discussion**
+- ~~Which codebase is the long-term production target?~~ ✅ **ANSWERED:** `/apps/labs` is production
+- Do we need Visx (Phase E) or is Recharts sufficient?
+- Do we want to revisit share cards/export features (Phase B)?
+- Do we standardize cumulative vs per‑quarter series sitewide?
+- Do we provide a "publication mode" with enlarged labels & margins for print?
+- Should we rename `/apps/labs` to `/app` (less confusing)?
 
 ---
 
-**Owner:** Benjamin / Campaign Reference  
-**Last Updated:** (set by CI at build time)
+**Owner:** Benjamin / Campaign Reference
+**Last Updated:** November 3, 2025 (Post-Audit)

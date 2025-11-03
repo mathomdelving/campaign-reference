@@ -1260,15 +1260,15 @@ Add Google OAuth as an alternative authentication method and complete Google app
 
 **Frontend Changes:**
 ```
-frontend/src/components/auth/
+apps/labs/src/components/auth/
 ├── LoginModal.jsx        ← Added Google OAuth button
 ├── SignUpModal.jsx       ← Added Google OAuth button
 
-frontend/src/views/
+apps/labs/src/views/
 ├── PrivacyPolicyView.jsx        ← NEW
 └── TermsOfServiceView.jsx       ← NEW
 
-frontend/src/App.jsx      ← Added /privacy and /terms routes
+apps/labs/src/App.jsx      ← Added /privacy and /terms routes
 ```
 
 **Configuration:**
@@ -1278,11 +1278,11 @@ frontend/src/App.jsx      ← Added /privacy and /terms routes
 - Google Search Console: Domain verified
 
 ### Files Created
-- `frontend/src/views/PrivacyPolicyView.jsx` - Complete privacy policy
-- `frontend/src/views/TermsOfServiceView.jsx` - Complete terms of service
-- Updated `frontend/src/components/auth/LoginModal.jsx` - Added Google OAuth
-- Updated `frontend/src/components/auth/SignUpModal.jsx` - Added Google OAuth
-- Updated `frontend/src/App.jsx` - Added legal page routes and footer links
+- `apps/labs/src/views/PrivacyPolicyView.jsx` - Complete privacy policy
+- `apps/labs/src/views/TermsOfServiceView.jsx` - Complete terms of service
+- Updated `apps/labs/src/components/auth/LoginModal.jsx` - Added Google OAuth
+- Updated `apps/labs/src/components/auth/SignUpModal.jsx` - Added Google OAuth
+- Updated `apps/labs/src/App.jsx` - Added legal page routes and footer links
 
 ---
 

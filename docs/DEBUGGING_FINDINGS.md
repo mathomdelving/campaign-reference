@@ -198,7 +198,7 @@ CREATE INDEX idx_qf_timeseries ON quarterly_financials(candidate_id, cycle, cove
 4. Batch insert (1000 records at a time)
 
 ### Phase 4: Update Frontend Data Hook ✅
-**File:** `frontend/src/hooks/useCandidateData.js`
+**File:** `apps/labs/src/hooks/useCandidateData.js`
 
 **Changes needed:**
 1. Query both `financial_summary` (for current totals) AND `quarterly_financials` (for timeseries)

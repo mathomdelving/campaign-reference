@@ -145,7 +145,7 @@ npm install react-router-dom
 
 ### New Component Structure
 ```
-frontend/src/
+apps/labs/src/
 ├── views/
 │   ├── DistrictView.jsx        # Use-Case 1: District comparison
 │   ├── CandidateView.jsx        # Use-Case 2: Individual profile
@@ -193,7 +193,7 @@ fec-dashboard/
 ├── tests/
 │   ├── test_quarterly_fetch.py
 │   └── test_quarterly_output.json
-├── frontend/                     # React app
+├── apps/labs/                     # React app
 ├── fetch_fec_data.py             # Data collection (RUNNING)
 ├── load_to_supabase.py           # Database loader (NEEDS UPDATE)
 ├── progress.json                 # Auto-generated progress
@@ -211,8 +211,8 @@ fec-dashboard/
 
 ### Code to Update
 - `load_to_supabase.py` - Add quarterly data loading function
-- `frontend/src/hooks/useCandidateData.js` - Add quarterly data fetching
-- `frontend/tailwind.config.js` - Add Political Pole colors
+- `apps/labs/src/hooks/useCandidateData.js` - Add quarterly data fetching
+- `apps/labs/tailwind.config.js` - Add Political Pole colors
 
 ### Database
 - Supabase already has `quarterly_financials` table created

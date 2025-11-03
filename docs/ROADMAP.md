@@ -226,7 +226,7 @@ load_to_supabase.py       Script to load JSON data to database
 
 ### Final File Structure
 ```
-frontend/
+apps/labs/
 ├── src/
 │   ├── components/
 │   │   ├── ChamberToggle.jsx        ✅ Button group (House/Senate/Both)
@@ -319,9 +319,9 @@ RaceTable or RaceChart renders
 
 #### Challenge 2: Supabase API Key Errors (401 Unauthorized)
 **Problem:** Frontend couldn't connect to Supabase despite having credentials  
-**Root Cause:** Environment variable file (`frontend/.env`) didn't exist  
-**Solution:** Created `frontend/.env` with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY  
-**Learning:** Vite requires VITE_ prefix for environment variables to be exposed to browser
+**Root Cause:** Environment variable file (`apps/labs/.env`) didn't exist  
+**Solution:** Created `apps/labs/.env` with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY  
+**Learning:** Vite requires NEXT_PUBLIC_ prefix for environment variables to be exposed to browser
 
 #### Challenge 3: Invalid API Key After .env Creation
 **Problem:** Still getting 401 errors even after creating .env file  
@@ -430,7 +430,7 @@ See `docs/GITHUB_ACTIONS_SETUP.md` for detailed instructions.
 3. Configure build settings:
    - Framework: Vite
    - Build: `cd frontend && npm run build`
-   - Output: `frontend/dist`
+   - Output: `apps/labs/dist`
 4. Set environment variables
 5. Deploy (automatic on push)
 
@@ -506,12 +506,12 @@ FEC_API_KEY=your_key_here
 SUPABASE_URL=your_url_here
 SUPABASE_KEY=your_service_role_key_here
 
-# Frontend (frontend/.env)
-VITE_SUPABASE_URL=your_url_here
-VITE_SUPABASE_ANON_KEY=your_anon_key_here
+# Frontend (apps/labs/.env)
+NEXT_PUBLIC_SUPABASE_URL=your_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 ```
 
-**IMPORTANT:** Vite requires `VITE_` prefix for environment variables to be exposed to the browser. Must restart dev server after any .env changes.
+**IMPORTANT:** Vite requires `NEXT_PUBLIC_` prefix for environment variables to be exposed to the browser. Must restart dev server after any .env changes.
 
 ---
 
@@ -578,7 +578,7 @@ VITE_SUPABASE_ANON_KEY=your_anon_key_here
 **Solution:** Used v3 with PostCSS instead of v4 Vite plugin for stability
 
 ### Challenge: Environment Variables
-**Solution:** Must use VITE_ prefix and restart dev server after changes
+**Solution:** Must use NEXT_PUBLIC_ prefix and restart dev server after changes
 
 ### Challenge: API Key Typos
 **Solution:** Double-check long keys character-by-character; use copy-paste from Supabase dashboard
@@ -673,7 +673,7 @@ fec-dashboard/
 ├── progress.json               # Resume tracking
 ├── ROADMAP.md                  # This file
 ├── README.md                   # GitHub readme
-└── frontend/                   # React application
+└── apps/labs/                   # React application
     ├── src/
     │   ├── components/         # All UI components (10 files)
     │   ├── hooks/              # Custom React hooks (2 files)

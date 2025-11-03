@@ -325,7 +325,7 @@ def load_quarterly_financials(file_path):
 #### New Component Structure
 
 ```
-frontend/src/
+apps/labs/src/
 ├── components/
 │   ├── layout/
 │   │   ├── Navigation.jsx              # Top nav with view switcher
@@ -495,7 +495,7 @@ export function QuarterlyChart({ data, metrics = ['receipts', 'disbursements', '
 
 #### Use-Case 1: District Race View
 ```javascript
-// frontend/src/views/DistrictView.jsx
+// apps/labs/src/views/DistrictView.jsx
 export default function DistrictView() {
   const [state, setState] = useState('');
   const [district, setDistrict] = useState('');
@@ -528,7 +528,7 @@ export default function DistrictView() {
 
 #### Use-Case 2: Candidate Profile
 ```javascript
-// frontend/src/views/CandidateView.jsx
+// apps/labs/src/views/CandidateView.jsx
 import { useParams } from 'react-router-dom';
 
 export default function CandidateView() {
@@ -555,7 +555,7 @@ export default function CandidateView() {
 
 #### Use-Case 3: Multi-Candidate Comparison
 ```javascript
-// frontend/src/views/ComparisonView.jsx
+// apps/labs/src/views/ComparisonView.jsx
 export default function ComparisonView() {
   const [selectedCandidates, setSelectedCandidates] = useState([]);
   const { data: candidates } = useCandidateData({ candidates: selectedCandidates });
@@ -585,7 +585,7 @@ export default function ComparisonView() {
 
 #### Use-Case 4: Leaderboard
 ```javascript
-// frontend/src/views/LeaderboardView.jsx
+// apps/labs/src/views/LeaderboardView.jsx
 export default function LeaderboardView() {
   const [chamber, setChamber] = useState('both');
   const [party, setParty] = useState('all');

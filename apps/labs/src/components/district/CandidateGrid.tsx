@@ -34,21 +34,20 @@ export function CandidateGrid({
   };
 
   return (
-    <table className="w-full table-fixed border-collapse text-sm text-rb-black">
+    <table className="w-full border-collapse text-sm text-rb-black">
       <thead className="border-b-2 border-rb-border bg-gray-50 uppercase tracking-wider text-rb-grey">
         <tr>
           <th className="w-12 px-1 py-3"></th>
           <th className="w-12 px-2 py-3 text-center text-[11px] font-semibold tracking-[0.2rem]">Rank</th>
-          <th className="w-[220px] px-3 py-3 text-left text-xs font-semibold">Candidate</th>
-          <th className="w-16 px-1 py-3 text-center text-xs font-semibold">Party</th>
+          <th className="px-3 py-3 text-left text-xs font-semibold">Candidate</th>
           {metrics.totalRaised && (
-            <th className="px-8 py-3 text-right text-xs font-semibold">Raised</th>
+            <th className="w-1/4 px-6 py-3 text-right text-xs font-semibold">Raised</th>
           )}
           {metrics.totalDisbursed && (
-            <th className="px-8 py-3 text-right text-xs font-semibold">Spent</th>
+            <th className="w-1/4 px-6 py-3 text-right text-xs font-semibold">Spent</th>
           )}
           {metrics.cashOnHand && (
-            <th className="px-8 py-3 text-right text-xs font-semibold">Cash</th>
+            <th className="w-1/4 px-6 py-3 text-right text-xs font-semibold">Cash</th>
           )}
         </tr>
       </thead>
@@ -98,18 +97,19 @@ export function CandidateGrid({
               <td className="w-12 px-2 py-4 text-center font-medium text-rb-black">
                 {index + 1}
               </td>
-              <td className="w-[220px] px-3 py-4">
+              <td className="px-3 py-4">
                 <div className="font-semibold text-rb-black">{candidate.name}</div>
-                <div className="text-xs text-rb-grey">{candidate.candidate_id}</div>
-              </td>
-              <td className="w-16 px-1 py-4 text-center">
-                <span className={partyLinkClasses(candidate.party)}>
-                  {formatPartyLabel(candidate.party)}
-                </span>
+                <div className="text-xs text-rb-grey flex items-center gap-1.5">
+                  <span>{candidate.candidate_id}</span>
+                  <span>•</span>
+                  <span className={getPartyTextColor(candidate.party)}>
+                    {formatPartyLabel(candidate.party)}
+                  </span>
+                </div>
               </td>
               {metrics.totalRaised && (
                 <td
-                  className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                  className="w-1/4 px-6 py-4 text-right text-base font-semibold text-rb-black cursor-help"
                   title={formatCurrency(candidate.totalRaised)}
                 >
                   {formatCompactCurrency(candidate.totalRaised)}
@@ -117,7 +117,7 @@ export function CandidateGrid({
               )}
               {metrics.totalDisbursed && (
                 <td
-                  className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                  className="w-1/4 px-6 py-4 text-right text-base font-semibold text-rb-black cursor-help"
                   title={formatCurrency(candidate.totalDisbursed)}
                 >
                   {formatCompactCurrency(candidate.totalDisbursed)}
@@ -125,7 +125,7 @@ export function CandidateGrid({
               )}
               {metrics.cashOnHand && (
                 <td
-                  className="px-8 py-4 text-right font-medium text-rb-black cursor-help"
+                  className="w-1/4 px-6 py-4 text-right text-base font-semibold text-rb-black cursor-help"
                   title={formatCurrency(candidate.cashOnHand)}
                 >
                   {formatCompactCurrency(candidate.cashOnHand)}
@@ -148,15 +148,14 @@ function formatPartyLabel(party?: string | null) {
   return party;
 }
 
-function partyLinkClasses(party?: string | null) {
+function getPartyTextColor(party?: string | null) {
   const normalized = (party ?? "").toUpperCase();
-  const baseClasses = "font-medium hover:underline cursor-pointer";
 
   if (normalized.includes("DEM")) {
-    return `${baseClasses} text-blue-600`;
+    return "text-blue-600 font-medium";
   }
   if (normalized.includes("REP")) {
-    return `${baseClasses} text-red-600`;
+    return "text-red-600 font-medium";
   }
-  return `${baseClasses} text-yellow-600`;
+  return "text-yellow-600 font-medium";
 }

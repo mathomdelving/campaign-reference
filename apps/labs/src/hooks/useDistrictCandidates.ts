@@ -19,6 +19,26 @@ const browserClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
+// Helper function to format names from "LAST, FIRST" to "First Last"
+function formatCandidateName(name: string): string {
+  if (!name) return name;
+
+  // Check if name is in "LAST, FIRST" format
+  if (name.includes(',')) {
+    const [last, first] = name.split(',').map(s => s.trim());
+
+    // Convert to title case
+    const titleCase = (str: string) => {
+      return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+    };
+
+    return `${titleCase(first)} ${titleCase(last)}`;
+  }
+
+  // If no comma, just apply title case
+  return name.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+}
+
 export interface DistrictCandidate {
   candidate_id: string;
   name: string;
@@ -89,8 +109,10 @@ export function useDistrictCandidates({
             )
           `
           )
-          .eq("cycle", cycle)
           .eq("state", state);
+
+        // Filter financial_summary by cycle using the correct syntax
+        query = query.filter("financial_summary.cycle", "eq", cycle);
 
         if (chamber === "H") {
           query = query.eq("office", "H");
@@ -107,7 +129,7 @@ export function useDistrictCandidates({
         let flattened =
           results?.map((candidate) => ({
             candidate_id: candidate.candidate_id,
-            name: candidate.name,
+            name: formatCandidateName(candidate.name),
             party: candidate.party,
             state: candidate.state,
             district: candidate.district,
@@ -136,6 +158,28 @@ export function useDistrictCandidates({
           }
         }
 
+        // Deduplicate candidates with same name (House-to-Senate switchers)
+        // Prioritize Senate over House
+        const deduplicatedByName = new Map<string, DistrictCandidate>();
+        flattened.forEach((candidate) => {
+          const key = candidate.name.toUpperCase().trim();
+          const existing = deduplicatedByName.get(key);
+
+          if (!existing) {
+            deduplicatedByName.set(key, candidate);
+          } else {
+            // If duplicate found, prefer Senate over House
+            if (candidate.office === 'S' && existing.office === 'H') {
+              deduplicatedByName.set(key, candidate);
+            }
+            // If both are same office, keep the one with higher receipts
+            else if (candidate.office === existing.office && candidate.totalRaised > existing.totalRaised) {
+              deduplicatedByName.set(key, candidate);
+            }
+          }
+        });
+
+        flattened = Array.from(deduplicatedByName.values());
         flattened.sort(
           (a, b) => (b.totalRaised ?? 0) - (a.totalRaised ?? 0)
         );

@@ -280,7 +280,7 @@ export function CommitteeView() {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search candidates or committees"
-              className="w-full border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-rb-brand-navy focus:outline-none"
+              className="w-full border border-gray-300 bg-white px-4 py-3 text-base sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-rb-brand-navy focus:outline-none"
             />
             {searchTerm && searchResults.length > 0 && (
               <div className="absolute z-20 mt-2 w-full overflow-hidden border-2 border-rb-brand-navy bg-white shadow-lg">

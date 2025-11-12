@@ -11,6 +11,8 @@ const STATES = [
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC",
 ];
 
+const CYCLES = [2026, 2024];
+
 interface PartySelection {
   democrat: boolean;
   republican: boolean;
@@ -18,12 +20,14 @@ interface PartySelection {
 }
 
 interface DistrictFiltersProps {
+  cycle: number;
   state: string;
   chamber: ChamberFilter;
   district: string;
   metrics: MetricToggles;
   partySelection: PartySelection;
   districts: DistrictOption[];
+  onCycleChange: (cycle: number) => void;
   onStateChange: (state: string) => void;
   onChamberChange: (value: ChamberFilter) => void;
   onDistrictChange: (district: string) => void;
@@ -34,12 +38,14 @@ interface DistrictFiltersProps {
 }
 
 export function DistrictFilters({
+  cycle,
   state,
   chamber,
   district,
   metrics,
   partySelection,
   districts,
+  onCycleChange,
   onStateChange,
   onChamberChange,
   onDistrictChange,
@@ -62,7 +68,24 @@ export function DistrictFilters({
         </button>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
+            Cycle
+          </label>
+          <select
+            value={cycle}
+            onChange={(event) => onCycleChange(Number(event.target.value))}
+            className="h-[42px] w-full border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none"
+          >
+            {CYCLES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="flex flex-col gap-2">
           <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
             State

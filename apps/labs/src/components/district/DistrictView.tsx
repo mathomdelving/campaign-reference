@@ -12,6 +12,7 @@ import { getPartyColor } from "@/utils/formatters";
 import type { ChartDatum, ChartSeriesConfig } from "@/components/CRLineChart";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
+import { getChartColor } from "@/lib/chartTheme";
 
 const DEFAULT_METRICS: MetricToggles = {
   totalRaised: true,
@@ -26,6 +27,7 @@ const DEFAULT_PARTY_FILTER = {
 };
 
 export function DistrictView() {
+  const [cycle, setCycle] = useState<number>(2026);
   const [state, setState] = useState<string>("all");
   const [chamber, setChamber] = useState<ChamberFilter>("H");
   const [district, setDistrict] = useState<string>("all");
@@ -36,7 +38,6 @@ export function DistrictView() {
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [watchingAll, setWatchingAll] = useState(false);
 
-  const cycle = 2026;
   const { user } = useAuth();
 
   const { districts } = useDistrictOptions(state, chamber, cycle);
@@ -132,17 +133,33 @@ export function DistrictView() {
       a.quarter.localeCompare(b.quarter)
     );
 
-    const config: ChartSeriesConfig[] = activeCandidateIds.map((candidateId) => {
+    // Trim leading empty quarters - find first quarter with any non-zero data
+    let firstNonEmptyIndex = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const quarter = sorted[i];
+      const hasData = activeCandidateIds.some((candidateId) => {
+        const value = quarter[candidateId];
+        return typeof value === "number" && value > 0;
+      });
+      if (hasData) {
+        firstNonEmptyIndex = i;
+        break;
+      }
+    }
+
+    const trimmed = sorted.slice(firstNonEmptyIndex);
+
+    const config: ChartSeriesConfig[] = activeCandidateIds.map((candidateId, index) => {
       const candidate = sortedCandidates.find((item) => item.candidate_id === candidateId);
       return {
         key: candidateId,
         label: candidate?.name ?? candidateId,
-        color: getPartyColor(candidate?.party ?? null),
+        color: getChartColor(index),
         strokeWidth: candidateId === activeCandidateIds[0] ? 2.5 : 1.5,
       };
     });
 
-    return { chartData: sorted, seriesConfig: config };
+    return { chartData: trimmed, seriesConfig: config };
   }, [quarterlyData, activeCandidateIds, chartMetric, sortedCandidates]);
 
   const handleCandidateToggle = (candidateId: string) => {
@@ -151,6 +168,11 @@ export function DistrictView() {
         ? prev.filter((id) => id !== candidateId)
         : [...prev, candidateId]
     );
+  };
+
+  const handleCycleChange = (value: number) => {
+    setCycle(value);
+    setSelectedCandidates([]);
   };
 
   const handleStateChange = (value: string) => {
@@ -186,6 +208,7 @@ export function DistrictView() {
     .join(" / ");
 
   const handleResetFilters = () => {
+    setCycle(2026);
     setState("all");
     setChamber("H");
     setDistrict("all");
@@ -293,12 +316,14 @@ export function DistrictView() {
       </header>
 
       <DistrictFilters
+        cycle={cycle}
         state={state}
         chamber={chamber}
         district={district}
         metrics={metrics}
         partySelection={partyFilter}
         districts={districts}
+        onCycleChange={handleCycleChange}
         onStateChange={handleStateChange}
         onChamberChange={handleChamberChange}
         onDistrictChange={handleDistrictChange}

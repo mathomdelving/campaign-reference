@@ -8,6 +8,8 @@ import { useQuarterlyData } from "@/hooks/useQuarterlyData";
 import { useCommitteeQuarterlyData } from "@/hooks/useCommitteeQuarterlyData";
 import { getPartyColor, formatCurrency } from "@/utils/formatters";
 import { FollowButton } from "@/components/follow/FollowButton";
+import { sortQuarterLabels } from "@/utils/quarters";
+import { getChartColor } from "@/lib/chartTheme";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -69,8 +71,8 @@ export function CommitteeView() {
     [selectedEntities]
   );
 
-  const { data: candidateQuarterlies } = useQuarterlyData(candidateIds, cycle);
-  const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, cycle);
+  const { data: candidateQuarterlies } = useQuarterlyData(candidateIds, [2024, 2026]);
+  const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, [2024, 2026]);
 
   const chartData = useMemo<ChartDatum[]>(() => {
     const map = new Map<string, ChartDatum>();
@@ -101,17 +103,35 @@ export function CommitteeView() {
           : record.cashEnding;
     }
 
-    return Array.from(map.values()).sort((a, b) => a.quarter.localeCompare(b.quarter));
+    // Sort chronologically using the quarter sorting utility
+    const sorted = Array.from(map.values()).sort((a, b) => sortQuarterLabels(a.quarter, b.quarter));
+
+    // Trim leading empty quarters - find first quarter with any non-zero data
+    const allEntityIds = [...candidateIds, ...committeeIds];
+    let firstNonEmptyIndex = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const quarter = sorted[i];
+      const hasData = allEntityIds.some((entityId) => {
+        const value = quarter[entityId];
+        return typeof value === "number" && value > 0;
+      });
+      if (hasData) {
+        firstNonEmptyIndex = i;
+        break;
+      }
+    }
+
+    return sorted.slice(firstNonEmptyIndex);
   }, [candidateQuarterlies, committeeQuarterlies, metric, candidateIds, committeeIds]);
 
   const seriesConfig = useMemo<ChartSeriesConfig[]>(() => {
-    return selectedEntities.map((entity) => ({
+    return selectedEntities.map((entity, index) => ({
       key: entity.id,
       label: entity.label,
       color:
-        entity.type === "committee"
-          ? entity.color ?? "#FFC906"
-          : getPartyColor(entity.party ?? null),
+        entity.type === "committee" && entity.color
+          ? entity.color // Keep predefined committee colors (DCCC, NRCC, etc.)
+          : getChartColor(index), // Use palette for candidates and other entities
       strokeWidth: 2,
     }));
   }, [selectedEntities]);

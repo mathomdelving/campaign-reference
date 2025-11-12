@@ -22,3 +22,24 @@ export const chartTheme = {
 } as const;
 
 export type ChartTheme = typeof chartTheme;
+
+// Distinct color palette for multi-entity charts (avoiding partisan blue/red)
+export const CHART_COLOR_PALETTE = [
+  '#10B981', // Emerald green
+  '#F59E0B', // Amber/gold
+  '#8B5CF6', // Purple
+  '#06B6D4', // Cyan
+  '#EC4899', // Pink (magenta, not red)
+  '#84CC16', // Lime green
+  '#F97316', // Orange
+  '#6366F1', // Indigo
+  '#14B8A6', // Teal
+  '#A855F7', // Violet
+] as const;
+
+/**
+ * Get a color from the palette based on index (cycles through palette)
+ */
+export function getChartColor(index: number): string {
+  return CHART_COLOR_PALETTE[index % CHART_COLOR_PALETTE.length];
+}

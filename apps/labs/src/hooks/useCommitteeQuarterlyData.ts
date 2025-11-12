@@ -37,13 +37,17 @@ interface CommitteeQuarterlyResult {
 
 export function useCommitteeQuarterlyData(
   committeeIds: string[],
-  cycle = 2026
+  cycles: number | number[] = 2026
 ): CommitteeQuarterlyResult {
   const [data, setData] = useState<CommitteeQuarterlyRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const key = useMemo(() => committeeIds.slice().sort().join(","), [committeeIds]);
+  const cycleKey = useMemo(() => {
+    const cycleArray = Array.isArray(cycles) ? cycles : [cycles];
+    return [...cycleArray].sort().join(",");
+  }, [cycles]);
 
   useEffect(() => {
     if (committeeIds.length === 0) {
@@ -60,12 +64,14 @@ export function useCommitteeQuarterlyData(
       setError(null);
 
       try {
+        const cyclesArray = Array.isArray(cycles) ? cycles : [cycles];
+
         const { data: results, error: queryError } = await browserClient
           .from("quarterly_financials")
           .select(
             "committee_id, committee_name, total_receipts, total_disbursements, cash_ending, coverage_end_date"
           )
-          .eq("cycle", cycle)
+          .in("cycle", cyclesArray)
           .in("committee_id", committeeIds)
           .order("coverage_end_date", { ascending: true });
 
@@ -106,7 +112,7 @@ export function useCommitteeQuarterlyData(
     return () => {
       cancelled = true;
     };
-  }, [key, cycle, committeeIds]);
+  }, [key, cycleKey, committeeIds]);
 
   return { data, loading, error };
 }

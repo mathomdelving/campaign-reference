@@ -43,7 +43,7 @@ interface UseQuarterlyDataResult {
 
 export function useQuarterlyData(
   candidateIds: string[] | string,
-  cycle = 2026
+  cycles: number | number[] = 2026
 ): UseQuarterlyDataResult {
   const [data, setData] = useState<QuarterlyRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +53,11 @@ export function useQuarterlyData(
     const ids = Array.isArray(candidateIds) ? candidateIds : [candidateIds];
     return [...ids].sort().join(",");
   }, [candidateIds]);
+
+  const cycleKey = useMemo(() => {
+    const cycleArray = Array.isArray(cycles) ? cycles : [cycles];
+    return [...cycleArray].sort().join(",");
+  }, [cycles]);
 
   useEffect(() => {
     async function fetchQuarterly() {
@@ -71,11 +76,13 @@ export function useQuarterlyData(
         setLoading(true);
         setError(null);
 
+        const cyclesArray = Array.isArray(cycles) ? cycles : [cycles];
+
         const { data: results, error: queryError } = await browserClient
           .from("quarterly_financials")
           .select("*")
           .in("candidate_id", ids)
-          .eq("cycle", cycle)
+          .in("cycle", cyclesArray)
           .order("coverage_end_date", { ascending: true });
 
         if (queryError) {
@@ -113,7 +120,7 @@ export function useQuarterlyData(
     }
 
     fetchQuarterly();
-  }, [candidateKey, candidateIds, cycle]);
+  }, [candidateKey, candidateIds, cycleKey]);
 
   return { data, loading, error };
 }

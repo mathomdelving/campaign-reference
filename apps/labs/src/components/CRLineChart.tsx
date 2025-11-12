@@ -199,7 +199,7 @@ function CRLineChartComponent({
         <LineChart
           data={data}
           margin={isMobile
-            ? { top: 16, right: 8, bottom: 12, left: 12 }
+            ? { top: 16, right: 8, bottom: 12, left: 6 }
             : { top: 16, right: 8, bottom: 12, left: 8 }
           }
         >

@@ -226,9 +226,15 @@ export function RaceChart({ data, metrics }: RaceChartProps) {
   }
 
   return (
-    <div className="h-[540px] w-full rounded-2xl border border-rb-border bg-rb-white p-6 shadow-sm">
+    <div className={`h-[540px] w-full rounded-2xl border border-rb-border bg-rb-white shadow-sm ${isMobile ? 'p-3' : 'p-6'}`}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData} margin={{ top: 24, right: 32, bottom: 80, left: 8 }}>
+        <BarChart
+          data={chartData}
+          margin={isMobile
+            ? { top: 16, right: 8, bottom: 80, left: 4 }
+            : { top: 24, right: 32, bottom: 80, left: 8 }
+          }
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#B0B0B0" opacity={0.4} />
           <XAxis
             dataKey="shortName"
@@ -247,6 +253,7 @@ export function RaceChart({ data, metrics }: RaceChartProps) {
             axisLine={{ stroke: "#E4E4E7" }}
             tickLine={false}
             tick={{ fill: "#2B2F36", fontSize: 12 }}
+            width={isMobile ? 40 : 50}
           />
           <Tooltip content={<CustomTooltip chartData={chartData} />} cursor={{ fill: "rgba(20, 40, 85, 0.08)" }} />
           <Legend

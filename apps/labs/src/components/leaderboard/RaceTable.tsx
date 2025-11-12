@@ -70,15 +70,15 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
   }
 
   return (
-    <table className="w-full border-collapse text-sm text-rb-black">
+    <table className="w-full border-collapse text-sm text-rb-black table-fixed">
       <thead className="border-b-2 border-rb-border bg-gray-50">
         <tr>
           <th className="w-12 px-2 py-3"></th>
           <th className="w-12 px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-rb-grey">Rank</th>
-          <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-rb-grey">Candidate</th>
+          <th className="w-[320px] px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-rb-grey">Candidate</th>
           {metrics.totalRaised && (
             <th
-              className="w-1/4 px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
+              className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
               onClick={() => handleSort("totalReceipts")}
             >
               <span className="inline-flex items-center justify-end gap-2">
@@ -89,7 +89,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
           )}
           {metrics.totalDisbursed && (
             <th
-              className="w-1/4 px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
+              className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
               onClick={() => handleSort("totalDisbursements")}
             >
               <span className="inline-flex items-center justify-end gap-2">
@@ -100,7 +100,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
           )}
           {metrics.cashOnHand && (
             <th
-              className="w-1/4 px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
+              className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-rb-grey cursor-pointer hover:text-rb-brand-navy"
               onClick={() => handleSort("cashOnHand")}
             >
               <span className="inline-flex items-center justify-end gap-2">
@@ -129,9 +129,9 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
               />
             </td>
             <td className="w-12 px-2 py-4 text-center font-medium text-rb-black">{index + 1}.</td>
-            <td className="px-3 py-4">
+            <td className="w-[320px] px-3 py-4">
               <div className="font-semibold text-rb-black">{candidate.name}</div>
-              <div className="text-xs text-rb-grey flex items-center gap-1.5">
+              <div className="text-xs text-rb-grey flex items-center gap-1.5 whitespace-nowrap">
                 <span>{candidate.candidate_id}</span>
                 <span>•</span>
                 <span className={getPartyTextColor(candidate.party)}>
@@ -143,7 +143,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
             </td>
             {metrics.totalRaised && (
               <td
-                className="w-1/4 px-6 py-4 text-right text-base font-semibold text-rb-black cursor-help"
+                className="px-4 py-4 text-right text-base font-semibold text-rb-black cursor-help"
                 title={formatCurrency(candidate.totalReceipts)}
               >
                 {formatCompactCurrency(candidate.totalReceipts)}
@@ -151,7 +151,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
             )}
             {metrics.totalDisbursed && (
               <td
-                className="w-1/4 px-6 py-4 text-right text-base font-semibold text-rb-black cursor-help"
+                className="px-4 py-4 text-right text-base font-semibold text-rb-black cursor-help"
                 title={formatCurrency(candidate.totalDisbursements)}
               >
                 {formatCompactCurrency(candidate.totalDisbursements)}
@@ -159,7 +159,7 @@ export function RaceTable({ data, metrics }: RaceTableProps) {
             )}
             {metrics.cashOnHand && (
               <td
-                className="w-1/4 px-6 py-4 text-right text-base font-semibold text-rb-black cursor-help"
+                className="px-4 py-4 text-right text-base font-semibold text-rb-black cursor-help"
                 title={formatCurrency(candidate.cashOnHand)}
               >
                 {formatCompactCurrency(candidate.cashOnHand)}

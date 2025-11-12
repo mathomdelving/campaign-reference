@@ -24,6 +24,17 @@ export interface DistrictOption {
   label: string;
 }
 
+// Maximum number of congressional districts per state (as of 2024)
+const STATE_DISTRICT_COUNT: Record<string, number> = {
+  AL: 7, AK: 1, AZ: 9, AR: 4, CA: 52, CO: 8, CT: 5, DE: 1,
+  FL: 28, GA: 14, HI: 2, ID: 2, IL: 17, IN: 9, IA: 4, KS: 4,
+  KY: 6, LA: 6, ME: 2, MD: 8, MA: 9, MI: 13, MN: 8, MS: 4,
+  MO: 8, MT: 2, NE: 3, NV: 4, NH: 2, NJ: 12, NM: 3, NY: 26,
+  NC: 14, ND: 1, OH: 15, OK: 5, OR: 6, PA: 17, RI: 2, SC: 7,
+  SD: 1, TN: 9, TX: 38, UT: 4, VT: 1, VA: 11, WA: 10, WV: 2,
+  WI: 8, WY: 1, DC: 0
+};
+
 export function useDistrictOptions(
   state: string,
   chamber: ChamberFilter,
@@ -51,18 +62,25 @@ export function useDistrictOptions(
         if (chamber === "H") {
           const { data, error: queryError } = await browserClient
             .from("candidates")
-            .select("district")
-            .eq("cycle", cycle)
+            .select("district, financial_summary!inner(cycle)")
+            .filter("financial_summary.cycle", "eq", cycle)
             .eq("state", state)
             .eq("office", "H")
             .not("district", "is", null);
 
           if (queryError) throw queryError;
 
+          const maxDistricts = STATE_DISTRICT_COUNT[state] || 0;
+
           const unique = Array.from(
             new Set((data ?? []).map((row) => row.district))
           )
-            .filter((value): value is string => Boolean(value))
+            .filter((value): value is string => {
+              if (!value) return false;
+              const districtNum = Number(value);
+              // Include "00" for at-large districts, or valid numbered districts within range
+              return value === "00" || value === "0" || (districtNum > 0 && districtNum <= maxDistricts);
+            })
             .sort((a, b) => Number(a) - Number(b));
 
           if (!cancelled) {
@@ -83,8 +101,8 @@ export function useDistrictOptions(
         } else if (chamber === "S") {
           const { data, error: queryError } = await browserClient
             .from("candidates")
-            .select("candidate_id")
-            .eq("cycle", cycle)
+            .select("candidate_id, financial_summary!inner(cycle)")
+            .filter("financial_summary.cycle", "eq", cycle)
             .eq("state", state)
             .eq("office", "S");
 

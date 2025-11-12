@@ -7,6 +7,7 @@ import { RaceTable } from "@/components/leaderboard/RaceTable";
 import { RaceChart } from "@/components/leaderboard/RaceChart";
 import { ExportButton } from "@/components/leaderboard/ExportButton";
 import { formatRelativeTime } from "@/utils/formatters";
+import { MultiSelect, type MultiSelectOption } from "@/components/shared/MultiSelect";
 
 const US_STATES = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
@@ -18,39 +19,56 @@ const US_STATES = [
 
 const CYCLES = [2026, 2024];
 
+const PARTY_OPTIONS: MultiSelectOption[] = [
+  { value: "democrat", label: "Democratic" },
+  { value: "republican", label: "Republican" },
+  { value: "other", label: "Other" },
+];
+
+const METRIC_OPTIONS: MultiSelectOption[] = [
+  { value: "totalRaised", label: "Total Raised" },
+  { value: "totalDisbursed", label: "Total Spent" },
+  { value: "cashOnHand", label: "Cash on Hand" },
+];
+
 type ViewMode = "table" | "chart";
 
 export function LeaderboardView() {
   const [viewMode, setViewMode] = useState<ViewMode>("table");
-  const [partySelection, setPartySelection] = useState({
-    democrat: true,
-    republican: true,
-    other: true,
-  });
-  const partyOptions: Array<{ key: keyof typeof partySelection; label: string }> = [
-    { key: "democrat", label: "Dem" },
-    { key: "republican", label: "GOP" },
-    { key: "other", label: "Other" },
-  ];
-  const { filters, updateFilter, updateMetric, resetFilters } = useFilters();
+  const [selectedParties, setSelectedParties] = useState<string[]>([
+    "democrat",
+    "republican",
+    "other",
+  ]);
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
+    "totalRaised",
+  ]);
+
+  const { filters, updateFilter, resetFilters } = useFilters();
   const { data, loading, error, lastUpdated } = useCandidateData(filters);
 
   const filteredData = useMemo(() => {
     return data.filter((candidate) => {
       const normalized = (candidate.party ?? "").toLowerCase();
-      const isDem = normalized.includes("democrat");
-      const isGop = normalized.includes("republican");
-      if (isDem) return partySelection.democrat;
-      if (isGop) return partySelection.republican;
-      return partySelection.other;
+      const isDem = normalized.includes("dem");
+      const isGop = normalized.includes("rep") || normalized.includes("gop");
+      if (isDem) return selectedParties.includes("democrat");
+      if (isGop) return selectedParties.includes("republican");
+      return selectedParties.includes("other");
     });
-  }, [data, partySelection]);
+  }, [data, selectedParties]);
 
-  const handlePartyToggle = (key: keyof typeof partySelection) => {
-    setPartySelection((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+  // Convert selected metrics to filter format
+  const metricsFilter = useMemo(() => ({
+    totalRaised: selectedMetrics.includes("totalRaised"),
+    totalDisbursed: selectedMetrics.includes("totalDisbursed"),
+    cashOnHand: selectedMetrics.includes("cashOnHand"),
+  }), [selectedMetrics]);
+
+  const handleResetAll = () => {
+    resetFilters();
+    setSelectedParties(["democrat", "republican", "other"]);
+    setSelectedMetrics(["totalRaised"]);
   };
 
   return (
@@ -81,130 +99,113 @@ export function LeaderboardView() {
       <section className="border-2 border-rb-brand-navy bg-white p-6 text-gray-900">
         <div className="flex justify-end">
           <button
-            onClick={resetFilters}
+            onClick={handleResetAll}
             className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.25rem] text-gray-600 transition hover:text-rb-brand-navy"
           >
             Reset All
           </button>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="flex flex-col gap-2">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
+          <div className="flex flex-col gap-2 w-full sm:w-[140px]">
             <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
               Cycle
             </label>
-            <select
-              value={filters.cycle}
-              onChange={(event) => updateFilter("cycle", Number(event.target.value))}
-              className="h-[42px] w-full border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none"
-            >
-              {CYCLES.map((cycle) => (
-                <option key={cycle} value={cycle}>
-                  {cycle}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={filters.cycle}
+                onChange={(event) => updateFilter("cycle", Number(event.target.value))}
+                className="h-[42px] w-full appearance-none border border-gray-300 bg-white px-4 pr-10 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none"
+              >
+                {CYCLES.map((cycle) => (
+                  <option key={cycle} value={cycle}>
+                    {cycle}
+                  </option>
+                ))}
+              </select>
+              <svg
+                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1">
+          <div className="flex flex-col gap-2 w-full sm:w-[140px]">
             <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
               Chamber
             </label>
-            <div className="flex h-[42px] gap-2">
-              {(
-                [
-                  { value: "both" as ChamberFilter, label: "Both" },
-                  { value: "H" as ChamberFilter, label: "House" },
-                  { value: "S" as ChamberFilter, label: "Senate" },
-                ] satisfies Array<{ value: ChamberFilter; label: string }>
-              ).map((option) => {
-                const active = filters.chamber === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => updateFilter("chamber", option.value)}
-                    className={[
-                      "flex-1 px-3 text-sm font-medium transition",
-                      active
-                        ? "bg-rb-gold text-rb-brand-navy"
-                        : "border border-gray-300 bg-white text-gray-600 hover:border-rb-brand-navy hover:text-rb-brand-navy",
-                    ].join(" ")}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
+            <div className="relative">
+              <select
+                value={filters.chamber}
+                onChange={(event) => updateFilter("chamber", event.target.value as ChamberFilter)}
+                className="h-[42px] w-full appearance-none border border-gray-300 bg-white px-4 pr-10 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none"
+              >
+                <option value="both">Both</option>
+                <option value="H">House</option>
+                <option value="S">Senate</option>
+              </select>
+              <svg
+                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 w-full sm:w-[140px]">
             <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
               State
             </label>
-            <select
-              value={filters.state}
-              onChange={(event) => updateFilter("state", event.target.value)}
-              className="h-[42px] w-full border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none"
-            >
-              <option value="all">All States</option>
-              {US_STATES.map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1">
-            <label className="text-xs font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
-              Party Filter
-            </label>
-            <div className="flex h-[42px] gap-2">
-              {partyOptions.map(({ key, label }) => {
-                const active = partySelection[key];
-                return (
-                  <button
-                    key={key}
-                    onClick={() => handlePartyToggle(key)}
-                    className={[
-                      "flex-1 border border-gray-300 px-3 text-sm font-medium transition",
-                      active
-                        ? "bg-rb-gold text-rb-brand-navy border-rb-gold"
-                        : "bg-white text-gray-600 hover:border-rb-brand-navy hover:text-rb-brand-navy",
-                    ].join(" ")}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+            <div className="relative">
+              <select
+                value={filters.state}
+                onChange={(event) => updateFilter("state", event.target.value)}
+                className="h-[42px] w-full appearance-none border border-gray-300 bg-white px-4 pr-10 text-sm font-medium text-gray-900 focus:border-rb-brand-navy focus:outline-none"
+              >
+                <option value="all">All States</option>
+                {US_STATES.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </select>
+              <svg
+                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
           </div>
-        </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {[
-            { key: "totalRaised", label: "Total Raised" },
-            { key: "totalDisbursed", label: "Total Spent" },
-            { key: "cashOnHand", label: "Cash on Hand" },
-          ].map(({ key, label }) => {
-            const active = filters.metrics[key as keyof typeof filters.metrics];
-            return (
-              <button
-                key={key}
-                onClick={() =>
-                  updateMetric(key as keyof typeof filters.metrics, !active)
-                }
-                className={[
-                  "h-[42px] px-4 text-sm font-medium transition-colors duration-150",
-                  active
-                    ? "bg-rb-gold text-rb-brand-navy"
-                    : "bg-rb-brand-navy text-white hover:bg-rb-blue",
-                ].join(" ")}
-              >
-                {label}
-              </button>
-            );
-          })}
+          <div className="w-full sm:max-w-[200px]">
+            <MultiSelect
+              label="Party"
+              options={PARTY_OPTIONS}
+              selected={selectedParties}
+              onChange={setSelectedParties}
+              placeholder="Select parties"
+            />
+          </div>
+
+          <div className="w-full sm:max-w-[200px]">
+            <MultiSelect
+              label="Metrics"
+              options={METRIC_OPTIONS}
+              selected={selectedMetrics}
+              onChange={setSelectedMetrics}
+              placeholder="Select metrics"
+            />
+          </div>
         </div>
       </section>
 
@@ -251,7 +252,7 @@ export function LeaderboardView() {
             </span>
             <ExportButton
               data={filteredData}
-              metrics={filters.metrics}
+              metrics={metricsFilter}
               disabled={loading || filteredData.length === 0}
             />
           </div>
@@ -269,12 +270,12 @@ export function LeaderboardView() {
           ) : viewMode === "table" ? (
             <div className="w-full overflow-x-auto">
               <div className="min-w-[800px]">
-                <RaceTable data={filteredData} metrics={filters.metrics} />
+                <RaceTable data={filteredData} metrics={metricsFilter} />
               </div>
             </div>
           ) : (
             <div className="p-6">
-              <RaceChart data={filteredData} metrics={filters.metrics} />
+              <RaceChart data={filteredData} metrics={metricsFilter} />
             </div>
           )}
         </div>

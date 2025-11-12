@@ -14,27 +14,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { getChartColor } from "@/lib/chartTheme";
 
-const DEFAULT_METRICS: MetricToggles = {
-  totalRaised: true,
-  totalDisbursed: false,
-  cashOnHand: false,
-};
-
-const DEFAULT_PARTY_FILTER = {
-  democrat: true,
-  republican: true,
-  other: true,
-};
-
 export function DistrictView() {
   const [cycle, setCycle] = useState<number>(2026);
   const [state, setState] = useState<string>("all");
   const [chamber, setChamber] = useState<ChamberFilter>("H");
   const [district, setDistrict] = useState<string>("all");
-  const [metrics, setMetrics] = useState<MetricToggles>({ ...DEFAULT_METRICS });
-  const [partyFilter, setPartyFilter] = useState<{ democrat: boolean; republican: boolean; other: boolean }>(() => ({
-    ...DEFAULT_PARTY_FILTER,
-  }));
+  const [selectedParties, setSelectedParties] = useState<string[]>([
+    "democrat",
+    "republican",
+    "other",
+  ]);
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
+    "totalRaised",
+  ]);
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [watchingAll, setWatchingAll] = useState(false);
 
@@ -56,17 +48,24 @@ export function DistrictView() {
   const filteredCandidates = useMemo(() => {
     return candidates.filter((candidate) => {
       const normalized = (candidate.party ?? "").toLowerCase();
-      const isDem = normalized.includes("democrat");
-      const isGop = normalized.includes("republican");
-      if (isDem) return partyFilter.democrat;
-      if (isGop) return partyFilter.republican;
-      return partyFilter.other;
+      const isDem = normalized.includes("dem");
+      const isGop = normalized.includes("rep") || normalized.includes("gop");
+      if (isDem) return selectedParties.includes("democrat");
+      if (isGop) return selectedParties.includes("republican");
+      return selectedParties.includes("other");
     });
-  }, [partyFilter, candidates]);
+  }, [selectedParties, candidates]);
 
-  const primaryMetric = metrics.totalRaised
+  // Convert selected metrics to toggles format
+  const metricsFilter = useMemo(() => ({
+    totalRaised: selectedMetrics.includes("totalRaised"),
+    totalDisbursed: selectedMetrics.includes("totalDisbursed"),
+    cashOnHand: selectedMetrics.includes("cashOnHand"),
+  }), [selectedMetrics]);
+
+  const primaryMetric = metricsFilter.totalRaised
     ? "totalRaised"
-    : metrics.totalDisbursed
+    : metricsFilter.totalDisbursed
     ? "totalDisbursed"
     : "cashOnHand";
 
@@ -102,9 +101,9 @@ export function DistrictView() {
     cycle
   );
 
-  const chartMetric = metrics.totalRaised
+  const chartMetric = metricsFilter.totalRaised
     ? "receipts"
-    : metrics.totalDisbursed
+    : metricsFilter.totalDisbursed
     ? "disbursements"
     : "cashEnding";
 
@@ -192,13 +191,6 @@ export function DistrictView() {
     setSelectedCandidates([]);
   };
 
-  const handleMetricToggle = (metric: keyof MetricToggles, value: boolean) => {
-    setMetrics((prev) => ({
-      ...prev,
-      [metric]: value,
-    }));
-  };
-
   const summaryLabel = [
     state === "all" ? "Nationwide" : state,
     chamber === "H" ? "House" : "Senate",
@@ -212,8 +204,8 @@ export function DistrictView() {
     setState("all");
     setChamber("H");
     setDistrict("all");
-    setMetrics({ ...DEFAULT_METRICS });
-    setPartyFilter({ ...DEFAULT_PARTY_FILTER });
+    setSelectedMetrics(["totalRaised"]);
+    setSelectedParties(["democrat", "republican", "other"]);
     setSelectedCandidates([]);
   };
 
@@ -320,20 +312,15 @@ export function DistrictView() {
         state={state}
         chamber={chamber}
         district={district}
-        metrics={metrics}
-        partySelection={partyFilter}
+        selectedParties={selectedParties}
+        selectedMetrics={selectedMetrics}
         districts={districts}
         onCycleChange={handleCycleChange}
         onStateChange={handleStateChange}
         onChamberChange={handleChamberChange}
         onDistrictChange={handleDistrictChange}
-        onMetricToggle={handleMetricToggle}
-        onPartyToggle={(key) =>
-          setPartyFilter((prev) => ({
-            ...prev,
-            [key]: !prev[key],
-          }))
-        }
+        onPartiesChange={setSelectedParties}
+        onMetricsChange={setSelectedMetrics}
         summaryLabel={summaryLabel}
         onReset={handleResetFilters}
       />
@@ -371,7 +358,7 @@ export function DistrictView() {
                   candidates={sortedCandidates}
                   selected={activeCandidateIds}
                   onToggle={handleCandidateToggle}
-                  metrics={metrics}
+                  metrics={metricsFilter}
                 />
               </div>
             </div>

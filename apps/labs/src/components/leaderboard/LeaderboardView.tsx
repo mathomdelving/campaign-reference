@@ -5,6 +5,7 @@ import { useFilters, type ChamberFilter } from "@/hooks/useFilters";
 import { useCandidateData } from "@/hooks/useCandidateData";
 import { RaceTable } from "@/components/leaderboard/RaceTable";
 import { RaceChart } from "@/components/leaderboard/RaceChart";
+import { RaceTreemap } from "@/components/leaderboard/RaceTreemap";
 import { ExportButton } from "@/components/leaderboard/ExportButton";
 import { formatRelativeTime } from "@/utils/formatters";
 import { MultiSelect, type MultiSelectOption } from "@/components/shared/MultiSelect";
@@ -31,7 +32,7 @@ const METRIC_OPTIONS: MultiSelectOption[] = [
   { value: "cashOnHand", label: "Cash on Hand" },
 ];
 
-type ViewMode = "table" | "chart";
+type ViewMode = "table" | "chart" | "treemap";
 
 export function LeaderboardView() {
   const [viewMode, setViewMode] = useState<ViewMode>("table");
@@ -214,10 +215,10 @@ export function LeaderboardView() {
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setViewMode("table")}
-              className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold uppercase tracking-[0.1rem] sm:tracking-[0.2rem] transition ${
+              className={`rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold uppercase tracking-[0.1rem] sm:tracking-[0.2rem] transition ${
                 viewMode === "table"
                   ? "bg-rb-gold text-rb-brand-navy"
-                  : "text-gray-600 hover:text-rb-brand-navy"
+                  : "bg-white text-gray-600 hover:text-rb-brand-navy"
               }`}
             >
               <span className="inline-flex items-center gap-1.5 sm:gap-2">
@@ -231,8 +232,8 @@ export function LeaderboardView() {
               onClick={() => setViewMode("chart")}
               className={`rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold uppercase tracking-[0.1rem] sm:tracking-[0.2rem] transition ${
                 viewMode === "chart"
-                  ? "bg-rb-red text-white"
-                  : "text-rb-grey hover:text-rb-brand-navy"
+                  ? "bg-rb-gold text-rb-brand-navy"
+                  : "bg-white text-gray-600 hover:text-rb-brand-navy"
               }`}
             >
               <span className="inline-flex items-center gap-1.5 sm:gap-2">
@@ -240,6 +241,21 @@ export function LeaderboardView() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 <span className="hidden sm:inline">Chart</span>
+              </span>
+            </button>
+            <button
+              onClick={() => setViewMode("treemap")}
+              className={`rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold uppercase tracking-[0.1rem] sm:tracking-[0.2rem] transition ${
+                viewMode === "treemap"
+                  ? "bg-rb-gold text-rb-brand-navy"
+                  : "bg-white text-gray-600 hover:text-rb-brand-navy"
+              }`}
+            >
+              <span className="inline-flex items-center gap-1.5 sm:gap-2">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 12a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7z" />
+                </svg>
+                <span className="hidden sm:inline">Treemap</span>
               </span>
             </button>
           </div>
@@ -273,9 +289,13 @@ export function LeaderboardView() {
                 <RaceTable data={filteredData} metrics={metricsFilter} />
               </div>
             </div>
-          ) : (
+          ) : viewMode === "chart" ? (
             <div className="p-6">
               <RaceChart data={filteredData} metrics={metricsFilter} />
+            </div>
+          ) : (
+            <div className="p-6">
+              <RaceTreemap data={filteredData} metrics={metricsFilter} />
             </div>
           )}
         </div>

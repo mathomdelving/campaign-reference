@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import type { LeaderboardCandidate } from "@/hooks/useCandidateData";
 import type { MetricToggles } from "@/hooks/useFilters";
-import { formatCompactCurrency } from "@/utils/formatters";
+import { formatCompactCurrency, formatCurrency } from "@/utils/formatters";
 
 const METRIC_CONFIG = {
   totalRaised: { key: "totalReceipts", label: "Total Raised", color: "#5B8AEF" },
@@ -26,6 +26,98 @@ type MetricKey = keyof typeof METRIC_CONFIG;
 interface RaceChartProps {
   data: LeaderboardCandidate[];
   metrics: MetricToggles;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; dataKey: string; payload: any }>;
+  label?: string;
+  chartData: any[];
+}
+
+function CustomTooltip({ active, payload, label, chartData }: CustomTooltipProps) {
+  if (!active || !payload || payload.length === 0 || !label) return null;
+
+  // Find the candidate from chartData using the label (shortName)
+  const candidate = chartData.find((c) => c.shortName === label);
+  if (!candidate) return null;
+
+  // Get total value across all metrics shown
+  const totalValue = payload.reduce((sum, entry) => sum + (entry.value ?? 0), 0);
+
+  return (
+    <div
+      style={{
+        backgroundColor: '#FFFFFF',
+        border: '1px solid #E5E7EB',
+        borderRadius: '12px',
+        boxShadow: '0 10px 30px rgba(20,40,85,0.1)',
+        padding: '12px 16px',
+        minWidth: '220px',
+      }}
+    >
+      <div style={{ fontWeight: 600, color: '#111827', marginBottom: '4px' }}>
+        {formatFullName(candidate.name)}
+      </div>
+      <div
+        style={{
+          fontSize: '12px',
+          color: '#9CA3AF',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          marginBottom: '8px',
+        }}
+      >
+        <span>{candidate.candidate_id}</span>
+        <span>•</span>
+        <span style={{ color: getPartyColor(candidate.party), fontWeight: 500 }}>
+          {formatPartyLabel(candidate.party)}
+        </span>
+        <span>•</span>
+        <span>{formatDistrictLabel(candidate.office, candidate.state, candidate.district)}</span>
+      </div>
+      <div style={{ fontSize: '13px', color: '#111827' }}>
+        {payload.map((entry, index) => {
+          const metricConfig = Object.values(METRIC_CONFIG).find(
+            (config) => config.key === entry.dataKey
+          );
+          return (
+            <div key={index} style={{ marginBottom: index < payload.length - 1 ? '4px' : 0 }}>
+              <strong>{metricConfig?.label}: </strong>
+              {formatCurrency(entry.value)}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function formatPartyLabel(party?: string | null): string {
+  if (!party) return "N/A";
+  const normalized = party.toLowerCase();
+  if (normalized.includes("dem")) return "DEM";
+  if (normalized.includes("rep")) return "GOP";
+  if (normalized.includes("ind")) return "IND";
+  return party;
+}
+
+function getPartyColor(party?: string | null): string {
+  const normalized = (party ?? "").toUpperCase();
+  if (normalized.includes("DEM")) return "#2563EB"; // blue-600
+  if (normalized.includes("REP")) return "#DC2626"; // red-600
+  return "#CA8A04"; // yellow-600
+}
+
+function formatDistrictLabel(office?: string | null, state?: string | null, district?: string | null): string {
+  if (office === "H") {
+    return `${state}-${district}`;
+  }
+  if (office === "S") {
+    return `${state}-SEN`;
+  }
+  return state || "—";
 }
 
 export function RaceChart({ data, metrics }: RaceChartProps) {
@@ -71,6 +163,11 @@ export function RaceChart({ data, metrics }: RaceChartProps) {
       totalReceipts: candidate.totalReceipts ?? 0,
       totalDisbursements: candidate.totalDisbursements ?? 0,
       cashOnHand: candidate.cashOnHand ?? 0,
+      candidate_id: candidate.candidate_id,
+      party: candidate.party,
+      office: candidate.office,
+      state: candidate.state,
+      district: candidate.district,
     }));
   }, [data, metrics]);
 
@@ -107,28 +204,7 @@ export function RaceChart({ data, metrics }: RaceChartProps) {
             tickLine={false}
             tick={{ fill: "#2B2F36", fontSize: 12 }}
           />
-          <Tooltip
-            cursor={{ fill: "rgba(20, 40, 85, 0.08)" }}
-            contentStyle={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #E5E7EB",
-              borderRadius: 12,
-              color: "#2B2F36",
-              boxShadow: "0 10px 30px rgba(20,40,85,0.1)",
-            }}
-            labelStyle={{ color: "#142855", fontWeight: 600 }}
-            labelFormatter={(label: string) => {
-              // Find the full name from chartData
-              const candidate = chartData.find(c => c.shortName === label);
-              return formatFullName(candidate?.name ?? label);
-            }}
-            formatter={(value: number, name: string) => {
-              const metricEntry = Object.values(METRIC_CONFIG).find(
-                (entry) => entry.key === name
-              );
-              return [formatCompactCurrency(value), metricEntry?.label ?? name];
-            }}
-          />
+          <Tooltip content={<CustomTooltip chartData={chartData} />} cursor={{ fill: "rgba(20, 40, 85, 0.08)" }} />
           <Legend
             verticalAlign="top"
             wrapperStyle={{ color: "#2B2F36", paddingBottom: 12 }}

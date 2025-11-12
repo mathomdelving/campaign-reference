@@ -260,7 +260,6 @@ export function RaceTreemap({ data, metrics }: RaceTreemapProps) {
             dataKey="size"
             aspectRatio={4 / 3}
             stroke="#fff"
-            strokeWidth={2}
             content={<CustomTreemapContent onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />}
           />
         </ResponsiveContainer>

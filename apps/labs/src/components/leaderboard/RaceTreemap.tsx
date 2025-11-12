@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ResponsiveContainer, Treemap } from "recharts";
 import type { LeaderboardCandidate } from "@/hooks/useCandidateData";
 import type { MetricToggles } from "@/hooks/useFilters";
@@ -172,6 +172,17 @@ interface TooltipData {
 
 export function RaceTreemap({ data, metrics }: RaceTreemapProps) {
   const [tooltip, setTooltip] = useState<{ x: number; y: number; data: TooltipData } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const treemapData = useMemo(() => {
     // Determine which metric to use (only use the first selected metric)
@@ -188,6 +199,9 @@ export function RaceTreemap({ data, metrics }: RaceTreemapProps) {
     const selectedMetric = metricPriority.find(m => visibleMetrics.includes(m)) ?? visibleMetrics[0];
     const metricKey = METRIC_CONFIG[selectedMetric].key as keyof LeaderboardCandidate;
 
+    // Show 25 candidates on mobile, 50 on desktop
+    const limit = isMobile ? 25 : 50;
+
     // Sort candidates by the selected metric
     const sorted = [...data]
       .filter(c => (c[metricKey] as number) > 0)
@@ -196,7 +210,7 @@ export function RaceTreemap({ data, metrics }: RaceTreemapProps) {
         const bValue = (b[metricKey] as number) ?? 0;
         return bValue - aValue;
       })
-      .slice(0, 50); // Limit to top 50 to keep treemap readable
+      .slice(0, limit);
 
     // Calculate party rankings
     const partyRankings = new Map<string, number>();
@@ -232,7 +246,7 @@ export function RaceTreemap({ data, metrics }: RaceTreemapProps) {
     });
 
     return nodes;
-  }, [data, metrics]);
+  }, [data, metrics, isMobile]);
 
   if (treemapData.length === 0) {
     return (

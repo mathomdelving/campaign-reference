@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Bar,
   BarChart,
@@ -121,6 +121,18 @@ function formatDistrictLabel(office?: string | null, state?: string | null, dist
 }
 
 export function RaceChart({ data, metrics }: RaceChartProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const chartData = useMemo(() => {
     // Determine which metrics to include in sorting
     const visibleMetrics = (Object.keys(metrics) as MetricKey[]).filter(
@@ -149,13 +161,16 @@ export function RaceChart({ data, metrics }: RaceChartProps) {
     const sortMetric = getSortMetric();
     const sortKey = METRIC_CONFIG[sortMetric].key as keyof LeaderboardCandidate;
 
+    // Show 10 candidates on mobile, 20 on desktop
+    const limit = isMobile ? 10 : 20;
+
     const sorted = [...data]
       .sort((a, b) => {
         const aValue = (a[sortKey] as number) ?? 0;
         const bValue = (b[sortKey] as number) ?? 0;
         return bValue - aValue;
       })
-      .slice(0, 20);
+      .slice(0, limit);
 
     return sorted.map((candidate) => ({
       name: candidate.name,
@@ -169,7 +184,7 @@ export function RaceChart({ data, metrics }: RaceChartProps) {
       state: candidate.state,
       district: candidate.district,
     }));
-  }, [data, metrics]);
+  }, [data, metrics, isMobile]);
 
   const visibleMetrics = (Object.keys(metrics) as MetricKey[]).filter(
     (metric) => metrics[metric]

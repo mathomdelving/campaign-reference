@@ -219,13 +219,21 @@ function CRLineChartComponent({
             stroke="#2B2F36"
             tickLine={false}
             axisLine={{ stroke: "#E4E4E7" }}
-            tick={{
-              fill: "#2B2F36",
-              fontSize: chartTheme.labelFontSize,
-              fontFamily: chartTheme.labelFontFamily,
-              angle: isMobile ? 45 : 0,
-              textAnchor: isMobile ? "start" : "end",
-            }}
+            tick={
+              isMobile
+                ? {
+                    fill: "#2B2F36",
+                    fontSize: chartTheme.labelFontSize,
+                    fontFamily: chartTheme.labelFontFamily,
+                    angle: 45,
+                    textAnchor: "start",
+                  } as any
+                : {
+                    fill: "#2B2F36",
+                    fontSize: chartTheme.labelFontSize,
+                    fontFamily: chartTheme.labelFontFamily,
+                  }
+            }
             tickFormatter={mobileYAxisFormatter}
             width={isMobile ? 50 : 50}
             ticks={yAxisTicks}

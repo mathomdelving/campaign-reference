@@ -97,7 +97,7 @@ export function ResetPasswordModal({
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   required
-                  className="w-full border border-gray-300 px-3 py-2 focus:border-rb-brand-navy focus:outline-none"
+                  className="w-full border border-gray-300 px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:border-rb-brand-navy focus:outline-none"
                   placeholder="you@example.com"
                   disabled={loading}
                 />

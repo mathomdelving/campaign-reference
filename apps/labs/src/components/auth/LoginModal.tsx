@@ -97,7 +97,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignUp, onSwitchToReset 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-rb-brand-navy"
+              className="w-full px-3 py-2 border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-rb-brand-navy"
               placeholder="you@example.com"
               disabled={loading}
             />
@@ -113,7 +113,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignUp, onSwitchToReset 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-rb-brand-navy"
+              className="w-full px-3 py-2 border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-rb-brand-navy"
               placeholder="••••••••"
               disabled={loading}
             />

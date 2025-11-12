@@ -190,6 +190,33 @@ export function RaceChart({ data, metrics }: RaceChartProps) {
     (metric) => metrics[metric]
   );
 
+  // Calculate Y-axis ticks based on max value
+  const yAxisTicks = useMemo(() => {
+    if (chartData.length === 0) return [];
+
+    // Find max value across all visible metrics
+    let maxValue = 0;
+    chartData.forEach((item) => {
+      visibleMetrics.forEach((metric) => {
+        const key = METRIC_CONFIG[metric].key;
+        const value = item[key] || 0;
+        maxValue = Math.max(maxValue, value);
+      });
+    });
+
+    // Round up to nearest 5
+    const ceiling = Math.ceil(maxValue / 5000000) * 5000000;
+
+    // Create 5 evenly-spaced ticks and round each
+    const ticks = [];
+    for (let i = 0; i <= 4; i++) {
+      const tickValue = (ceiling * i) / 4;
+      ticks.push(Math.round(tickValue));
+    }
+
+    return ticks;
+  }, [chartData, visibleMetrics]);
+
   if (chartData.length === 0) {
     return (
       <div className="rounded-2xl border border-rb-border bg-rb-white p-12 text-center text-sm text-rb-grey shadow-sm">
@@ -214,7 +241,9 @@ export function RaceChart({ data, metrics }: RaceChartProps) {
             textAnchor="start"
           />
           <YAxis
-            tickFormatter={(value) => formatCompactCurrency(value)}
+            ticks={yAxisTicks}
+            domain={[0, yAxisTicks[yAxisTicks.length - 1]]}
+            tickFormatter={(value) => `$${Math.round(value / 1000000)}M`}
             axisLine={{ stroke: "#E4E4E7" }}
             tickLine={false}
             tick={{ fill: "#2B2F36", fontSize: 12 }}

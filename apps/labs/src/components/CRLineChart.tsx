@@ -225,8 +225,8 @@ function CRLineChartComponent({
                     fill: "#2B2F36",
                     fontSize: chartTheme.labelFontSize,
                     fontFamily: chartTheme.labelFontFamily,
-                    angle: 45,
-                    textAnchor: "start",
+                    angle: -45,
+                    textAnchor: "end",
                   } as any
                 : {
                     fill: "#2B2F36",

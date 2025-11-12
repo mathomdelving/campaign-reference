@@ -166,13 +166,40 @@ function CRLineChartComponent({
     };
   }, [activeSeries, isMobile]);
 
+  // Calculate Y-axis ticks dynamically to exclude the bottom (0) tick on mobile
+  const yAxisTicks = useMemo(() => {
+    if (!isMobile || data.length === 0) return undefined; // Let recharts auto-calculate for desktop
+
+    // Find max value across all series
+    let maxValue = 0;
+    data.forEach((datum) => {
+      activeSeries.forEach((series) => {
+        const value = datum[series.key];
+        if (typeof value === "number" && value > maxValue) {
+          maxValue = value;
+        }
+      });
+    });
+
+    if (maxValue === 0) return undefined;
+
+    // Generate 5 ticks excluding 0, evenly spaced from the max
+    const tickCount = 5;
+    const ticks: number[] = [];
+    for (let i = 1; i <= tickCount; i++) {
+      ticks.push((maxValue * i) / tickCount);
+    }
+
+    return ticks;
+  }, [isMobile, data, activeSeries]);
+
   return (
     <div className="h-full w-full rounded-2xl border border-rb-border bg-rb-white p-3 sm:p-6">
       <ResponsiveContainer width="100%" height={height}>
         <LineChart
           data={data}
           margin={isMobile
-            ? { top: 16, right: 8, bottom: 12, left: 4 }
+            ? { top: 16, right: 8, bottom: 12, left: 12 }
             : { top: 16, right: 8, bottom: 12, left: 8 }
           }
         >
@@ -196,9 +223,13 @@ function CRLineChartComponent({
               fill: "#2B2F36",
               fontSize: chartTheme.labelFontSize,
               fontFamily: chartTheme.labelFontFamily,
+              angle: isMobile ? 45 : 0,
+              textAnchor: isMobile ? "start" : "end",
             }}
             tickFormatter={mobileYAxisFormatter}
-            width={isMobile ? 40 : 50}
+            width={isMobile ? 50 : 50}
+            ticks={yAxisTicks}
+            domain={isMobile && yAxisTicks ? [0, "dataMax"] : undefined}
           />
           <Tooltip content={<TooltipContent />} />
           {showLegend && (

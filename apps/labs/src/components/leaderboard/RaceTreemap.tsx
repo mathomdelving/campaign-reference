@@ -31,6 +31,7 @@ interface TreemapNode {
   office: string;
   state: string;
   district: string;
+  [key: string]: any;
 }
 
 // Party color bases (darker = higher ranked)
@@ -253,6 +254,7 @@ export function RaceTreemap({ data, metrics }: RaceTreemapProps) {
     <div className="relative h-[600px] w-full bg-rb-white p-6">
       <div className="h-full w-full overflow-hidden rounded-lg" style={{ borderRadius: '8px' }}>
         <ResponsiveContainer width="100%" height="100%">
+          {/* @ts-ignore - Recharts Treemap type definitions are incomplete */}
           <Treemap
             data={treemapData}
             dataKey="size"

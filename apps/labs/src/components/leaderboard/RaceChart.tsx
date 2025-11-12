@@ -30,18 +30,49 @@ interface RaceChartProps {
 
 export function RaceChart({ data, metrics }: RaceChartProps) {
   const chartData = useMemo(() => {
+    // Determine which metrics to include in sorting
+    const visibleMetrics = (Object.keys(metrics) as MetricKey[]).filter(
+      (metric) => metrics[metric]
+    );
+
+    // Priority order for sorting: totalRaised > totalDisbursed > cashOnHand
+    const metricPriority: MetricKey[] = ['totalRaised', 'totalDisbursed', 'cashOnHand'];
+
+    // Get the highest priority metric from selected metrics
+    const getSortMetric = (): MetricKey => {
+      if (visibleMetrics.length === 0) {
+        return 'totalRaised'; // Default
+      }
+
+      // Find the highest priority metric that is selected
+      for (const metric of metricPriority) {
+        if (visibleMetrics.includes(metric)) {
+          return metric;
+        }
+      }
+
+      return visibleMetrics[0]; // Fallback
+    };
+
+    const sortMetric = getSortMetric();
+    const sortKey = METRIC_CONFIG[sortMetric].key as keyof LeaderboardCandidate;
+
     const sorted = [...data]
-      .sort((a, b) => (b.totalReceipts ?? 0) - (a.totalReceipts ?? 0))
+      .sort((a, b) => {
+        const aValue = (a[sortKey] as number) ?? 0;
+        const bValue = (b[sortKey] as number) ?? 0;
+        return bValue - aValue;
+      })
       .slice(0, 20);
 
     return sorted.map((candidate) => ({
       name: candidate.name,
-      shortName: abbreviateName(candidate.name),
+      shortName: getLastName(candidate.name),
       totalReceipts: candidate.totalReceipts ?? 0,
       totalDisbursements: candidate.totalDisbursements ?? 0,
       cashOnHand: candidate.cashOnHand ?? 0,
     }));
-  }, [data]);
+  }, [data, metrics]);
 
   const visibleMetrics = (Object.keys(metrics) as MetricKey[]).filter(
     (metric) => metrics[metric]
@@ -67,6 +98,8 @@ export function RaceChart({ data, metrics }: RaceChartProps) {
             tick={{ fill: "#2B2F36", fontSize: 12 }}
             interval={0}
             height={70}
+            angle={45}
+            textAnchor="start"
           />
           <YAxis
             tickFormatter={(value) => formatCompactCurrency(value)}
@@ -84,6 +117,11 @@ export function RaceChart({ data, metrics }: RaceChartProps) {
               boxShadow: "0 10px 30px rgba(20,40,85,0.1)",
             }}
             labelStyle={{ color: "#142855", fontWeight: 600 }}
+            labelFormatter={(label: string) => {
+              // Find the full name from chartData
+              const candidate = chartData.find(c => c.shortName === label);
+              return formatFullName(candidate?.name ?? label);
+            }}
             formatter={(value: number, name: string) => {
               const metricEntry = Object.values(METRIC_CONFIG).find(
                 (entry) => entry.key === name
@@ -113,14 +151,49 @@ export function RaceChart({ data, metrics }: RaceChartProps) {
   );
 }
 
-function abbreviateName(name: string) {
+function formatFullName(name: string) {
   const parts = name.split(",");
-  if (parts.length < 2) return name;
-  const lastName = parts[0].trim();
-  const firstPart = parts[1].trim().split(" ")[0];
-  return `${firstPart.charAt(0)}. ${capitalize(lastName.toLowerCase())}`;
+
+  // If there's a comma, format is "LAST, FIRST MIDDLE"
+  if (parts.length >= 2) {
+    const lastName = properCase(parts[0].trim());
+    const firstMiddle = parts[1].trim().split(" ");
+    const firstName = properCase(firstMiddle[0] || "");
+
+    // Get middle initial if exists
+    const middlePart = firstMiddle.slice(1).join(" ");
+    const middleInitial = middlePart ? ` ${properCase(middlePart.charAt(0))}.` : "";
+
+    return `${firstName}${middleInitial} ${lastName}`;
+  }
+
+  // If no comma, assume already formatted
+  return properCase(name);
 }
 
-function capitalize(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
+function getLastName(name: string) {
+  const parts = name.split(",");
+
+  // If there's a comma, the last name is before it (format: "LAST, FIRST")
+  if (parts.length >= 2) {
+    const lastName = parts[0].trim();
+    return properCase(lastName);
+  }
+
+  // If no comma, assume format is "First Last" and take the last word
+  const words = name.trim().split(" ");
+  const lastName = words[words.length - 1];
+  return properCase(lastName);
+}
+
+function properCase(value: string) {
+  // Handle hyphenated names and capitalize each word properly
+  return value
+    .toLowerCase()
+    .split(/(\s+|-)/g) // Split on spaces and hyphens but keep delimiters
+    .map((word) => {
+      if (word === " " || word === "-") return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join("");
 }

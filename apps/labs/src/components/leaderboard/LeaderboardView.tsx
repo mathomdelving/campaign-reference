@@ -213,6 +213,7 @@ export function LeaderboardView() {
       <section className="border-2 border-rb-brand-navy bg-white">
         <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6">
           <div className="flex items-center gap-2 sm:gap-3">
+            <span className="font-display text-sm text-gray-900 sm:hidden">Select View:</span>
             <button
               onClick={() => setViewMode("table")}
               className={`rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold uppercase tracking-[0.1rem] sm:tracking-[0.2rem] transition ${

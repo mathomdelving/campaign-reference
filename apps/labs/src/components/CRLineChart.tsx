@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState, useEffect } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -39,6 +39,34 @@ const DEFAULT_SERIES: ChartSeriesConfig[] = [
   { key: "gop", label: "Republicans", color: chartTheme.series.gop },
   { key: "ind", label: "Independents", color: chartTheme.series.ind },
 ];
+
+function getLastName(fullName: string): string {
+  // Handle format: "LAST, FIRST MIDDLE" or "First Last"
+  const parts = fullName.split(",");
+
+  if (parts.length >= 2) {
+    // Format is "LAST, FIRST" - take the part before comma
+    const lastName = parts[0].trim();
+    return properCase(lastName);
+  }
+
+  // Format is "First Last" - take the last word
+  const words = fullName.trim().split(" ");
+  const lastName = words[words.length - 1];
+  return properCase(lastName);
+}
+
+function properCase(value: string): string {
+  // Handle hyphenated names and capitalize each word properly
+  return value
+    .toLowerCase()
+    .split(/(\s+|-)/g) // Split on spaces and hyphens but keep delimiters
+    .map((word) => {
+      if (word === " " || word === "-") return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join("");
+}
 
 function TooltipContent({
   active,
@@ -86,6 +114,18 @@ function CRLineChartComponent({
   yAxisFormatter = formatCompactCurrency,
   series = DEFAULT_SERIES,
 }: CRLineChartProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const resolvedSeries = useMemo(() => {
     return series.filter((item) => hasValues(data, item.key));
   }, [data, series]);
@@ -95,12 +135,46 @@ function CRLineChartComponent({
     return series;
   }, [resolvedSeries, series]);
 
+  // Mobile-optimized Y-axis formatter (remove decimals)
+  const mobileYAxisFormatter = useMemo(() => {
+    if (!isMobile) return yAxisFormatter;
+
+    return (value: number) => {
+      if (!value) return "$0";
+      if (Math.abs(value) >= 1_000_000) {
+        return `$${Math.round(value / 1_000_000)}M`;
+      }
+      if (Math.abs(value) >= 1_000) {
+        return `$${Math.round(value / 1_000)}K`;
+      }
+      return `$${Math.round(value)}`;
+    };
+  }, [isMobile, yAxisFormatter]);
+
+  // Legend formatter: show last names on mobile, full names on desktop
+  const legendFormatter = useMemo(() => {
+    return (value: string) => {
+      const match = activeSeries.find((item) => item.key === value);
+      const label = match?.label ?? value;
+
+      // On mobile, extract last name only
+      if (isMobile && label) {
+        return getLastName(label);
+      }
+
+      return label;
+    };
+  }, [activeSeries, isMobile]);
+
   return (
     <div className="h-full w-full rounded-2xl border border-rb-border bg-rb-white p-3 sm:p-6">
       <ResponsiveContainer width="100%" height={height}>
         <LineChart
           data={data}
-          margin={{ top: 16, right: 8, bottom: 12, left: 4 }}
+          margin={isMobile
+            ? { top: 16, right: 8, bottom: 12, left: 4 }
+            : { top: 16, right: 8, bottom: 12, left: 8 }
+          }
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#B0B0B0" opacity={0.4} />
           <XAxis
@@ -123,21 +197,19 @@ function CRLineChartComponent({
               fontSize: chartTheme.labelFontSize,
               fontFamily: chartTheme.labelFontFamily,
             }}
-            tickFormatter={yAxisFormatter}
+            tickFormatter={mobileYAxisFormatter}
+            width={isMobile ? 40 : 50}
           />
           <Tooltip content={<TooltipContent />} />
           {showLegend && (
             <Legend
-              formatter={(value) => {
-                const match = activeSeries.find((item) => item.key === value);
-                return match?.label ?? value;
-              }}
+              formatter={legendFormatter}
               verticalAlign="top"
               align="right"
               iconType="plainline"
               wrapperStyle={{
                 paddingBottom: 12,
-                fontSize: 12,
+                fontSize: isMobile ? 11 : 12,
                 color: "#2B2F36",
               }}
             />

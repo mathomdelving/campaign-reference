@@ -220,50 +220,56 @@ export function CommitteeView() {
         const hasSpace = trimmed.includes(' ') && !trimmed.includes(',');
         const parts = hasSpace ? trimmed.split(/\s+/) : [];
 
-        if (parts.length === 2) {
-          const [first, last] = parts;
+        if (parts.length >= 2) {
+          // Handle 3+ words: assume last word is last name, rest is first name
+          // e.g., "Ben Ray Lujan" → "Lujan, Ben Ray"
+          let first: string, last: string;
 
-          // Two words: check if both are substantial (3+ chars)
-          if (first.length >= 3 && last.length >= 3) {
-            // Both substantial → Convert "First Last" to "Last, First"
-            const pattern = `${last}, ${first}`;
-            console.log(`[Committee Search] Full name conversion: "${trimmed}" → "${pattern}"`);
-
-            const result = await browserClient
-              .from("candidates")
-              .select("candidate_id, name, party")
-              .ilike("name", `%${pattern}%`)
-              .limit(20);
-
-            data = result.data;
-            error = result.error;
-          } else if (last.length <= 2) {
-            // Second word is short (1-2 chars) → "John F" pattern
-            // Search: Last name starts with "F" AND first name contains "John"
-            console.log(`[Committee Search] Short last initial: last starts with "${last}", first contains "${first}"`);
-
-            const result = await browserClient
-              .from("candidates")
-              .select("candidate_id, name, party")
-              .ilike("name", `${last}%`)
-              .ilike("name", `%, ${first}%`)
-              .limit(20);
-
-            data = result.data;
-            error = result.error;
+          if (parts.length > 2) {
+            last = parts[parts.length - 1];
+            first = parts.slice(0, -1).join(' ');
+            console.log(`[Committee Search] Multi-word name: "${trimmed}" → "${last}, ${first}"`);
           } else {
-            // First word is short → unusual case, search as-is
-            console.log(`[Committee Search] Unusual pattern, searching as-is: "${trimmed}"`);
-
-            const result = await browserClient
-              .from("candidates")
-              .select("candidate_id, name, party")
-              .ilike("name", `%${trimmed}%`)
-              .limit(20);
-
-            data = result.data;
-            error = result.error;
+            [first, last] = parts;
           }
+
+          // Run 3 queries for comprehensive matching
+          console.log(`[Committee Search] Running 3-query fallback for: "${first}" "${last}"`);
+
+          // Query 1: Exact conversion "Last, First"
+          const result1 = await browserClient
+            .from("candidates")
+            .select("candidate_id, name, party")
+            .ilike("name", `%${last}, ${first}%`)
+            .limit(20);
+
+          // Query 2: Prefix match - Last starts with last word, First contains first word
+          const result2 = await browserClient
+            .from("candidates")
+            .select("candidate_id, name, party")
+            .ilike("name", `${last}%`)
+            .ilike("name", `%, ${first}%`)
+            .limit(20);
+
+          // Query 3: Middle name catch - First name contains second word, anywhere contains first word
+          const result3 = await browserClient
+            .from("candidates")
+            .select("candidate_id, name, party")
+            .ilike("name", `%, %${last}%`)
+            .ilike("name", `%${first}%`)
+            .limit(20);
+
+          // Combine and deduplicate all results
+          const combinedMap = new Map();
+
+          [result1, result2, result3].forEach(result => {
+            if (result.data) {
+              result.data.forEach(row => combinedMap.set(row.candidate_id, row));
+            }
+          });
+
+          data = Array.from(combinedMap.values()).slice(0, 20);
+          error = result1.error || result2.error || result3.error;
         } else {
           // Single word → Match at START of last name OR START of first name (after comma)
           console.log(`[Committee Search] Single word: "${trimmed}" at start of last or first name`);

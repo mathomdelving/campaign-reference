@@ -353,12 +353,13 @@ export function CommitteeView() {
               .ilike("name", `%, ${firstVariation}%`)
               .limit(20);
 
-            // Query 3: Middle name catch - First name contains second word, anywhere contains first word
+            // Query 3: Middle name catch - Last name starts with, First name field contains the variation
+            // This catches cases like "JOHNSON, JAMES MICHAEL" when searching "Mike Johnson"
             const result3 = await browserClient
               .from("candidates")
               .select("candidate_id, name, party")
-              .ilike("name", `%, %${last}%`)
-              .ilike("name", `%${firstVariation}%`)
+              .ilike("name", `${last}%`)
+              .ilike("name", `%, %${firstVariation}%`)
               .limit(20);
 
             allResults.push(result1, result2, result3);

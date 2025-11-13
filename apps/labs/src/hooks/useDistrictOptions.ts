@@ -99,27 +99,28 @@ export function useDistrictOptions(
             setDistricts(options);
           }
         } else if (chamber === "S") {
-          // For Senate, query the actual district column which stores class (I, II, III)
-          const { data, error: queryError } = await browserClient
-            .from("candidates")
-            .select("district, financial_summary!inner(cycle)")
-            .filter("financial_summary.cycle", "eq", cycle)
-            .eq("state", state)
-            .eq("office", "S")
-            .not("district", "is", null)
-            .in("district", ["I", "II", "III"]);
+          // For Senate, show all classes available for this state
+          // Each state has exactly 2 Senate seats in different classes
+          const stateClasses: Record<string, string[]> = {
+            AL: ["II", "III"], AK: ["II", "III"], AZ: ["I", "III"], AR: ["II", "III"],
+            CA: ["I", "III"], CO: ["II", "III"], CT: ["I", "III"], DE: ["I", "II"],
+            FL: ["I", "III"], GA: ["II", "III"], HI: ["I", "III"], ID: ["II", "III"],
+            IL: ["II", "III"], IN: ["I", "III"], IA: ["II", "III"], KS: ["II", "III"],
+            KY: ["II", "III"], LA: ["II", "III"], ME: ["I", "II"], MD: ["I", "III"],
+            MA: ["I", "II"], MI: ["I", "II"], MN: ["I", "II"], MS: ["I", "II"],
+            MO: ["I", "III"], MT: ["I", "II"], NE: ["I", "II"], NV: ["I", "III"],
+            NH: ["II", "III"], NJ: ["I", "II"], NM: ["I", "II"], NY: ["I", "III"],
+            NC: ["II", "III"], ND: ["I", "III"], OH: ["I", "III"], OK: ["II", "III"],
+            OR: ["II", "III"], PA: ["I", "III"], RI: ["I", "II"], SC: ["II", "III"],
+            SD: ["II", "III"], TN: ["I", "II"], TX: ["I", "II"], UT: ["I", "III"],
+            VT: ["I", "III"], VA: ["I", "II"], WA: ["I", "III"], WV: ["I", "II"],
+            WI: ["I", "III"], WY: ["I", "II"],
+          };
 
-          if (queryError) throw queryError;
-
-          // Get unique classes from the district column
-          const uniqueClasses = Array.from(
-            new Set(
-              (data ?? []).map((row) => row.district)
-            )
-          ).filter((value): value is string => Boolean(value));
+          const classes = stateClasses[state] || [];
 
           if (!cancelled) {
-            const options = uniqueClasses
+            const options = classes
               .sort()  // Sort I, II, III
               .map((classValue) => ({
                 value: classValue,

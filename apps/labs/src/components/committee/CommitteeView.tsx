@@ -24,6 +24,100 @@ const browserClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: false },
 });
 
+// Nickname dictionary for common political names (bidirectional)
+const NICKNAME_MAP: Record<string, string[]> = {
+  // Mike/Michael
+  'mike': ['mike', 'michael'],
+  'michael': ['mike', 'michael'],
+  // Jim/James/Jimmy
+  'jim': ['jim', 'james', 'jimmy'],
+  'james': ['jim', 'james', 'jimmy'],
+  'jimmy': ['jim', 'james', 'jimmy'],
+  // Bob/Robert/Bobby
+  'bob': ['bob', 'robert', 'bobby'],
+  'robert': ['bob', 'robert', 'bobby'],
+  'bobby': ['bob', 'robert', 'bobby'],
+  // Bill/William/Billy
+  'bill': ['bill', 'william', 'billy'],
+  'william': ['bill', 'william', 'billy'],
+  'billy': ['bill', 'william', 'billy'],
+  // Joe/Joseph
+  'joe': ['joe', 'joseph'],
+  'joseph': ['joe', 'joseph'],
+  // Tom/Thomas
+  'tom': ['tom', 'thomas'],
+  'thomas': ['tom', 'thomas'],
+  // Dick/Richard/Rick/Ricky
+  'dick': ['dick', 'richard', 'rick', 'ricky'],
+  'richard': ['dick', 'richard', 'rick', 'ricky'],
+  'rick': ['dick', 'richard', 'rick', 'ricky'],
+  'ricky': ['dick', 'richard', 'rick', 'ricky'],
+  // Jack/John/Johnny
+  'jack': ['jack', 'john', 'johnny'],
+  'john': ['jack', 'john', 'johnny'],
+  'johnny': ['jack', 'john', 'johnny'],
+  // Ben/Benjamin
+  'ben': ['ben', 'benjamin'],
+  'benjamin': ['ben', 'benjamin'],
+  // Dan/Daniel/Danny
+  'dan': ['dan', 'daniel', 'danny'],
+  'daniel': ['dan', 'daniel', 'danny'],
+  'danny': ['dan', 'daniel', 'danny'],
+  // Chris/Christopher
+  'chris': ['chris', 'christopher'],
+  'christopher': ['chris', 'christopher'],
+  // Matt/Matthew
+  'matt': ['matt', 'matthew'],
+  'matthew': ['matt', 'matthew'],
+  // Dave/David
+  'dave': ['dave', 'david'],
+  'david': ['dave', 'david'],
+  // Steve/Steven/Stephen
+  'steve': ['steve', 'steven', 'stephen'],
+  'steven': ['steve', 'steven', 'stephen'],
+  'stephen': ['steve', 'steven', 'stephen'],
+  // Tony/Anthony
+  'tony': ['tony', 'anthony'],
+  'anthony': ['tony', 'anthony'],
+  // Chuck/Charles/Charlie
+  'chuck': ['chuck', 'charles', 'charlie'],
+  'charles': ['chuck', 'charles', 'charlie'],
+  'charlie': ['chuck', 'charles', 'charlie'],
+  // Ed/Edward/Eddie
+  'ed': ['ed', 'edward', 'eddie'],
+  'edward': ['ed', 'edward', 'eddie'],
+  'eddie': ['ed', 'edward', 'eddie'],
+  // Pete/Peter
+  'pete': ['pete', 'peter'],
+  'peter': ['pete', 'peter'],
+  // Pat/Patricia/Patrick
+  'pat': ['pat', 'patricia', 'patrick'],
+  'patricia': ['pat', 'patricia'],
+  'patrick': ['pat', 'patrick'],
+  // Liz/Elizabeth/Beth
+  'liz': ['liz', 'elizabeth', 'beth', 'betty'],
+  'elizabeth': ['liz', 'elizabeth', 'beth', 'betty'],
+  'beth': ['liz', 'elizabeth', 'beth', 'betty'],
+  'betty': ['liz', 'elizabeth', 'beth', 'betty'],
+  // Debbie/Deborah
+  'debbie': ['debbie', 'deborah'],
+  'deborah': ['debbie', 'deborah'],
+  // Katie/Katherine/Kate/Kathy
+  'katie': ['katie', 'katherine', 'kate', 'kathy', 'catherine'],
+  'kate': ['katie', 'katherine', 'kate', 'kathy', 'catherine'],
+  'katherine': ['katie', 'katherine', 'kate', 'kathy', 'catherine'],
+  'kathy': ['katie', 'katherine', 'kate', 'kathy', 'catherine'],
+  'catherine': ['katie', 'katherine', 'kate', 'kathy', 'catherine'],
+};
+
+/**
+ * Expand a name part to include common nicknames
+ */
+function expandNicknames(name: string): string[] {
+  const lower = name.toLowerCase();
+  return NICKNAME_MAP[lower] || [name];
+}
+
 // Helper function to format names from "LAST, FIRST" to "First Last"
 function formatCandidateName(name: string): string {
   if (!name) return name;
@@ -233,75 +327,98 @@ export function CommitteeView() {
             [first, last] = parts;
           }
 
-          // Run 3 queries for comprehensive matching
-          console.log(`[Committee Search] Running 3-query fallback for: "${first}" "${last}"`);
+          // Expand first name to include nicknames (e.g., "Mike" → ["mike", "michael"])
+          const firstNameVariations = expandNicknames(first);
+          console.log(`[Committee Search] Expanded "${first}" to: [${firstNameVariations.join(', ')}]`);
 
-          // Query 1: Exact conversion "Last, First"
-          const result1 = await browserClient
-            .from("candidates")
-            .select("candidate_id, name, party")
-            .ilike("name", `%${last}, ${first}%`)
-            .limit(20);
+          // Run 3 queries for EACH first name variation
+          const allResults: any[] = [];
+          const allErrors: any[] = [];
 
-          // Query 2: Prefix match - Last starts with last word, First contains first word
-          const result2 = await browserClient
-            .from("candidates")
-            .select("candidate_id, name, party")
-            .ilike("name", `${last}%`)
-            .ilike("name", `%, ${first}%`)
-            .limit(20);
+          for (const firstVariation of firstNameVariations) {
+            console.log(`[Committee Search] Running 3-query fallback for: "${firstVariation}" "${last}"`);
 
-          // Query 3: Middle name catch - First name contains second word, anywhere contains first word
-          const result3 = await browserClient
-            .from("candidates")
-            .select("candidate_id, name, party")
-            .ilike("name", `%, %${last}%`)
-            .ilike("name", `%${first}%`)
-            .limit(20);
+            // Query 1: Exact conversion "Last, First"
+            const result1 = await browserClient
+              .from("candidates")
+              .select("candidate_id, name, party")
+              .ilike("name", `%${last}, ${firstVariation}%`)
+              .limit(20);
 
-          // Combine and deduplicate all results
+            // Query 2: Prefix match - Last starts with last word, First contains first word
+            const result2 = await browserClient
+              .from("candidates")
+              .select("candidate_id, name, party")
+              .ilike("name", `${last}%`)
+              .ilike("name", `%, ${firstVariation}%`)
+              .limit(20);
+
+            // Query 3: Middle name catch - First name contains second word, anywhere contains first word
+            const result3 = await browserClient
+              .from("candidates")
+              .select("candidate_id, name, party")
+              .ilike("name", `%, %${last}%`)
+              .ilike("name", `%${firstVariation}%`)
+              .limit(20);
+
+            allResults.push(result1, result2, result3);
+            if (result1.error) allErrors.push(result1.error);
+            if (result2.error) allErrors.push(result2.error);
+            if (result3.error) allErrors.push(result3.error);
+          }
+
+          // Combine and deduplicate all results across all variations
           const combinedMap = new Map();
 
-          [result1, result2, result3].forEach(result => {
+          allResults.forEach(result => {
             if (result.data) {
               result.data.forEach(row => combinedMap.set(row.candidate_id, row));
             }
           });
 
           data = Array.from(combinedMap.values()).slice(0, 20);
-          error = result1.error || result2.error || result3.error;
+          error = allErrors.length > 0 ? allErrors[0] : null;
         } else {
           // Single word → Match at START of last name OR START of first name (after comma)
-          console.log(`[Committee Search] Single word: "${trimmed}" at start of last or first name`);
+          // Also expand nicknames
+          const nameVariations = expandNicknames(trimmed);
+          console.log(`[Committee Search] Single word expanded: "${trimmed}" → [${nameVariations.join(', ')}]`);
 
-          // Make two separate queries and combine results
-          // Query 1: Match start of last name
-          const result1 = await browserClient
-            .from("candidates")
-            .select("candidate_id, name, party")
-            .ilike("name", `${trimmed}%`)
-            .limit(20);
+          // Make two queries for EACH variation and combine results
+          const allResults: any[] = [];
+          const allErrors: any[] = [];
 
-          // Query 2: Match start of first name (after ", ")
-          const result2 = await browserClient
-            .from("candidates")
-            .select("candidate_id, name, party")
-            .ilike("name", `%, ${trimmed}%`)
-            .limit(20);
+          for (const variation of nameVariations) {
+            // Query 1: Match start of last name
+            const result1 = await browserClient
+              .from("candidates")
+              .select("candidate_id, name, party")
+              .ilike("name", `${variation}%`)
+              .limit(20);
+
+            // Query 2: Match start of first name (after ", ")
+            const result2 = await browserClient
+              .from("candidates")
+              .select("candidate_id, name, party")
+              .ilike("name", `%, ${variation}%`)
+              .limit(20);
+
+            allResults.push(result1, result2);
+            if (result1.error) allErrors.push(result1.error);
+            if (result2.error) allErrors.push(result2.error);
+          }
 
           // Combine and deduplicate results
           const combinedMap = new Map();
 
-          if (result1.data) {
-            result1.data.forEach(row => combinedMap.set(row.candidate_id, row));
-          }
-
-          if (result2.data) {
-            result2.data.forEach(row => combinedMap.set(row.candidate_id, row));
-          }
+          allResults.forEach(result => {
+            if (result.data) {
+              result.data.forEach(row => combinedMap.set(row.candidate_id, row));
+            }
+          });
 
           data = Array.from(combinedMap.values()).slice(0, 20);
-          error = result1.error || result2.error;
+          error = allErrors.length > 0 ? allErrors[0] : null;
         }
 
         if (error) {

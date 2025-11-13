@@ -224,7 +224,10 @@ export function CommitteeView() {
             // Convert "First Last" to "Last, First" pattern
             const [first, last] = parts;
             searchPattern = `${last}, ${first}`;
+            console.log(`[Committee Search] Converted "${trimmed}" → "${searchPattern}"`);
           }
+        } else {
+          console.log(`[Committee Search] Using pattern as-is: "${searchPattern}"`);
         }
 
         // Query with the transformed pattern
@@ -234,7 +237,12 @@ export function CommitteeView() {
           .ilike("name", `%${searchPattern}%`)
           .limit(20); // Get more results since we might filter some out
 
-        if (error) throw error;
+        if (error) {
+          console.error('[Committee Search] Query error:', error);
+          throw error;
+        }
+
+        console.log(`[Committee Search] Found ${data?.length || 0} candidates for pattern "${searchPattern}"`);
 
         const candidateResults: EntityResult[] =
           data?.map((row) => ({

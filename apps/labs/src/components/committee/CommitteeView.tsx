@@ -203,7 +203,8 @@ export function CommitteeView() {
   }, [selectedEntities, metric, candidateQuarterlies, committeeQuarterlies, candidateIds, committeeIds]);
 
   useEffect(() => {
-    if (searchTerm.trim().length < 2) {
+    // Require minimum 3 characters for search
+    if (searchTerm.trim().length < 3) {
       setSearchResults([]);
       return;
     }
@@ -211,64 +212,40 @@ export function CommitteeView() {
     let cancelled = false;
     (async () => {
       try {
-        // Build flexible search patterns to match "First Last" or "Last, First" formats
         const trimmed = searchTerm.trim();
-
         let data = null;
         let error = null;
 
-        // If search has spaces (likely "First Last" format), search both ways
-        if (trimmed.includes(' ') && !trimmed.includes(',')) {
-          const parts = trimmed.split(/\s+/);
-          if (parts.length === 2) {
-            const [first, last] = parts;
+        // Check if this looks like a "First Last" pattern with substantial parts
+        const hasSpace = trimmed.includes(' ') && !trimmed.includes(',');
+        const parts = hasSpace ? trimmed.split(/\s+/) : [];
+        const isTwoSubstantialWords = parts.length === 2 && parts[0].length >= 3 && parts[1].length >= 3;
 
-            // Try "Last, First" pattern first (most common in DB)
-            const lastFirstPattern = `${last}, ${first}`;
-            console.log(`[Committee Search] Trying "Last, First": "${lastFirstPattern}"`);
+        if (isTwoSubstantialWords) {
+          // Both parts are at least 3 chars - try "Last, First" conversion
+          const [first, last] = parts;
+          const lastFirstPattern = `${last}, ${first}`;
+          console.log(`[Committee Search] Converting "${trimmed}" → "${lastFirstPattern}"`);
 
-            const result1 = await browserClient
-              .from("candidates")
-              .select("candidate_id, name, party")
-              .ilike("name", `%${lastFirstPattern}%`)
-              .limit(20);
+          const result = await browserClient
+            .from("candidates")
+            .select("candidate_id, name, party")
+            .ilike("name", `%${lastFirstPattern}%`)
+            .limit(20);
 
-            // If no results, try searching for names containing both words
-            if (!result1.data || result1.data.length === 0) {
-              console.log(`[Committee Search] No results, trying broader search for both "${first}" and "${last}"`);
-
-              // Search for last name in the name field (will match "LASTNAME, ")
-              const result2 = await browserClient
-                .from("candidates")
-                .select("candidate_id, name, party")
-                .ilike("name", `${last}%`)
-                .ilike("name", `%${first}%`)
-                .limit(20);
-
-              data = result2.data;
-              error = result2.error;
-            } else {
-              data = result1.data;
-              error = result1.error;
-            }
-          } else {
-            // More than 2 words, search as-is
-            const result = await browserClient
-              .from("candidates")
-              .select("candidate_id, name, party")
-              .ilike("name", `%${trimmed}%`)
-              .limit(20);
-            data = result.data;
-            error = result.error;
-          }
+          data = result.data;
+          error = result.error;
         } else {
-          // Single word or comma format - search as-is
-          console.log(`[Committee Search] Single word search: "${trimmed}"`);
+          // Default: search for the term anywhere in the name
+          // This handles: "Joh", "John", "John F", "Fett", etc.
+          console.log(`[Committee Search] Searching for "${trimmed}" anywhere in name`);
+
           const result = await browserClient
             .from("candidates")
             .select("candidate_id, name, party")
             .ilike("name", `%${trimmed}%`)
             .limit(20);
+
           data = result.data;
           error = result.error;
         }

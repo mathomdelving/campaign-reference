@@ -216,38 +216,86 @@ export function CommitteeView() {
         let data = null;
         let error = null;
 
-        // Check if this looks like a "First Last" pattern with substantial parts
+        // Parse search term
         const hasSpace = trimmed.includes(' ') && !trimmed.includes(',');
         const parts = hasSpace ? trimmed.split(/\s+/) : [];
-        const isTwoSubstantialWords = parts.length === 2 && parts[0].length >= 3 && parts[1].length >= 3;
 
-        if (isTwoSubstantialWords) {
-          // Both parts are at least 3 chars - try "Last, First" conversion
+        if (parts.length === 2) {
           const [first, last] = parts;
-          const lastFirstPattern = `${last}, ${first}`;
-          console.log(`[Committee Search] Converting "${trimmed}" → "${lastFirstPattern}"`);
 
-          const result = await browserClient
-            .from("candidates")
-            .select("candidate_id, name, party")
-            .ilike("name", `%${lastFirstPattern}%`)
-            .limit(20);
+          // Two words: check if both are substantial (3+ chars)
+          if (first.length >= 3 && last.length >= 3) {
+            // Both substantial → Convert "First Last" to "Last, First"
+            const pattern = `${last}, ${first}`;
+            console.log(`[Committee Search] Full name conversion: "${trimmed}" → "${pattern}"`);
 
-          data = result.data;
-          error = result.error;
+            const result = await browserClient
+              .from("candidates")
+              .select("candidate_id, name, party")
+              .ilike("name", `%${pattern}%`)
+              .limit(20);
+
+            data = result.data;
+            error = result.error;
+          } else if (last.length <= 2) {
+            // Second word is short (1-2 chars) → "John F" pattern
+            // Search: Last name starts with "F" AND first name contains "John"
+            console.log(`[Committee Search] Short last initial: last starts with "${last}", first contains "${first}"`);
+
+            const result = await browserClient
+              .from("candidates")
+              .select("candidate_id, name, party")
+              .ilike("name", `${last}%`)
+              .ilike("name", `%, ${first}%`)
+              .limit(20);
+
+            data = result.data;
+            error = result.error;
+          } else {
+            // First word is short → unusual case, search as-is
+            console.log(`[Committee Search] Unusual pattern, searching as-is: "${trimmed}"`);
+
+            const result = await browserClient
+              .from("candidates")
+              .select("candidate_id, name, party")
+              .ilike("name", `%${trimmed}%`)
+              .limit(20);
+
+            data = result.data;
+            error = result.error;
+          }
         } else {
-          // Default: search for the term anywhere in the name
-          // This handles: "Joh", "John", "John F", "Fett", etc.
-          console.log(`[Committee Search] Searching for "${trimmed}" anywhere in name`);
+          // Single word → Match at START of last name OR START of first name (after comma)
+          console.log(`[Committee Search] Single word: "${trimmed}" at start of last or first name`);
 
-          const result = await browserClient
+          // Make two separate queries and combine results
+          // Query 1: Match start of last name
+          const result1 = await browserClient
             .from("candidates")
             .select("candidate_id, name, party")
-            .ilike("name", `%${trimmed}%`)
+            .ilike("name", `${trimmed}%`)
             .limit(20);
 
-          data = result.data;
-          error = result.error;
+          // Query 2: Match start of first name (after ", ")
+          const result2 = await browserClient
+            .from("candidates")
+            .select("candidate_id, name, party")
+            .ilike("name", `%, ${trimmed}%`)
+            .limit(20);
+
+          // Combine and deduplicate results
+          const combinedMap = new Map();
+
+          if (result1.data) {
+            result1.data.forEach(row => combinedMap.set(row.candidate_id, row));
+          }
+
+          if (result2.data) {
+            result2.data.forEach(row => combinedMap.set(row.candidate_id, row));
+          }
+
+          data = Array.from(combinedMap.values()).slice(0, 20);
+          error = result1.error || result2.error;
         }
 
         if (error) {

@@ -99,37 +99,32 @@ export function useDistrictOptions(
             setDistricts(options);
           }
         } else if (chamber === "S") {
+          // For Senate, query the actual district column which stores class (I, II, III)
           const { data, error: queryError } = await browserClient
             .from("candidates")
-            .select("candidate_id, financial_summary!inner(cycle)")
+            .select("district, financial_summary!inner(cycle)")
             .filter("financial_summary.cycle", "eq", cycle)
             .eq("state", state)
-            .eq("office", "S");
+            .eq("office", "S")
+            .not("district", "is", null)
+            .in("district", ["I", "II", "III"]);
 
           if (queryError) throw queryError;
 
-          const classMap: Record<string, string> = {
-            "0": "Class II",   // 2020 election
-            "2": "Class III",  // 2022 election
-            "4": "Class I",    // 2024 election
-            "6": "Class II",   // 2026 election
-            "8": "Class III",  // 2028 election (or Special elections)
-          };
-
+          // Get unique classes from the district column
           const uniqueClasses = Array.from(
             new Set(
-              (data ?? []).map((row) => {
-                const char = row.candidate_id?.charAt(1) ?? "";
-                return classMap[char];
-              })
+              (data ?? []).map((row) => row.district)
             )
           ).filter((value): value is string => Boolean(value));
 
           if (!cancelled) {
-            const options = uniqueClasses.map((label) => ({
-              value: label.replace("Class ", ""),
-              label,
-            }));
+            const options = uniqueClasses
+              .sort()  // Sort I, II, III
+              .map((classValue) => ({
+                value: classValue,
+                label: `Class ${classValue}`,
+              }));
             setDistricts(options);
           }
         } else {

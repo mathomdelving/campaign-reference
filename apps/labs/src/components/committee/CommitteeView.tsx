@@ -369,11 +369,11 @@ export function CommitteeView() {
           }
 
           // Combine and deduplicate all results across all variations
-          const combinedMap = new Map();
+          const combinedMap = new Map<string, any>();
 
           allResults.forEach(result => {
             if (result.data) {
-              result.data.forEach(row => combinedMap.set(row.candidate_id, row));
+              result.data.forEach((row: any) => combinedMap.set(row.candidate_id, row));
             }
           });
 
@@ -410,11 +410,11 @@ export function CommitteeView() {
           }
 
           // Combine and deduplicate results
-          const combinedMap = new Map();
+          const combinedMap = new Map<string, any>();
 
           allResults.forEach(result => {
             if (result.data) {
-              result.data.forEach(row => combinedMap.set(row.candidate_id, row));
+              result.data.forEach((row: any) => combinedMap.set(row.candidate_id, row));
             }
           });
 

@@ -213,33 +213,26 @@ export function CommitteeView() {
       try {
         // Build flexible search patterns to match "First Last" or "Last, First" formats
         const trimmed = searchTerm.trim();
-        let query = browserClient
-          .from("candidates")
-          .select("candidate_id, name, party");
 
-        // If search term contains a comma, search as-is (user typing "Last, First")
-        if (trimmed.includes(',')) {
-          query = query.ilike("name", `%${trimmed}%`);
-        }
-        // If search term has spaces (e.g., "John Fetterman"), try both formats
-        else if (trimmed.includes(' ')) {
+        // Strategy: Make broader query and filter results
+        // If search has spaces (e.g., "John Fetterman"), try to match "FETTERMAN, JOHN"
+        let searchPattern = trimmed;
+
+        if (trimmed.includes(' ') && !trimmed.includes(',')) {
           const parts = trimmed.split(/\s+/);
           if (parts.length === 2) {
-            // Try "First Last" → "Last, First" conversion
+            // Convert "First Last" to "Last, First" pattern
             const [first, last] = parts;
-            // Use OR to search for both "Last, First" and original term
-            query = query.or(`name.ilike.%${last}, ${first}%,name.ilike.%${trimmed}%`);
-          } else {
-            // Multiple words, just search as-is
-            query = query.ilike("name", `%${trimmed}%`);
+            searchPattern = `${last}, ${first}`;
           }
         }
-        // Single word - search anywhere in name (matches first or last name)
-        else {
-          query = query.ilike("name", `%${trimmed}%`);
-        }
 
-        const { data, error } = await query.limit(8);
+        // Query with the transformed pattern
+        const { data, error } = await browserClient
+          .from("candidates")
+          .select("candidate_id, name, party")
+          .ilike("name", `%${searchPattern}%`)
+          .limit(20); // Get more results since we might filter some out
 
         if (error) throw error;
 
@@ -257,7 +250,9 @@ export function CommitteeView() {
         ).map((entity) => ({ ...entity, subtitle: "Committee" }));
 
         if (!cancelled) {
-          setSearchResults([...committeeMatches, ...candidateResults]);
+          // Combine and limit to 8 total results
+          const combined = [...committeeMatches, ...candidateResults];
+          setSearchResults(combined.slice(0, 8));
         }
       } catch (error) {
         console.error("Search failed", error);

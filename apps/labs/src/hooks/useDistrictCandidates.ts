@@ -144,17 +144,74 @@ export function useDistrictCandidates({
           })) ?? [];
 
         if (chamber === "S" && district !== "all") {
-          const classToChar: Record<string, string> = {
-            I: "4",
-            II: "0",
-            III: "6",
-            Special: "8",
+          // State-based Senate class mapping
+          // Each state has two Senate seats in different classes
+          // Source: https://www.senate.gov/senators/ (as of 2024)
+          const stateClassMap: Record<string, Record<string, string>> = {
+            AL: { "II": "Class II", "III": "Class III" },
+            AK: { "II": "Class II", "III": "Class III" },
+            AZ: { "I": "Class I", "III": "Class III" },
+            AR: { "II": "Class II", "III": "Class III" },
+            CA: { "I": "Class I", "III": "Class III" },
+            CO: { "II": "Class II", "III": "Class III" },
+            CT: { "I": "Class I", "III": "Class III" },
+            DE: { "I": "Class I", "II": "Class II" },
+            FL: { "I": "Class I", "III": "Class III" },
+            GA: { "II": "Class II", "III": "Class III" },
+            HI: { "I": "Class I", "III": "Class III" },
+            ID: { "II": "Class II", "III": "Class III" },
+            IL: { "II": "Class II", "III": "Class III" },
+            IN: { "I": "Class I", "III": "Class III" },
+            IA: { "II": "Class II", "III": "Class III" },
+            KS: { "II": "Class II", "III": "Class III" },
+            KY: { "II": "Class II", "III": "Class III" },
+            LA: { "II": "Class II", "III": "Class III" },
+            ME: { "I": "Class I", "II": "Class II" },
+            MD: { "I": "Class I", "III": "Class III" },
+            MA: { "I": "Class I", "II": "Class II" },
+            MI: { "I": "Class I", "II": "Class II" },
+            MN: { "I": "Class I", "II": "Class II" },
+            MS: { "I": "Class I", "II": "Class II" },
+            MO: { "I": "Class I", "III": "Class III" },
+            MT: { "I": "Class I", "II": "Class II" },
+            NE: { "I": "Class I", "II": "Class II" },
+            NV: { "I": "Class I", "III": "Class III" },
+            NH: { "II": "Class II", "III": "Class III" },
+            NJ: { "I": "Class I", "II": "Class II" },
+            NM: { "I": "Class I", "II": "Class II" },
+            NY: { "I": "Class I", "III": "Class III" },
+            NC: { "II": "Class II", "III": "Class III" },
+            ND: { "I": "Class I", "III": "Class III" },
+            OH: { "I": "Class I", "III": "Class III" },
+            OK: { "II": "Class II", "III": "Class III" },
+            OR: { "II": "Class II", "III": "Class III" },
+            PA: { "I": "Class I", "III": "Class III" },
+            RI: { "I": "Class I", "II": "Class II" },
+            SC: { "II": "Class II", "III": "Class III" },
+            SD: { "II": "Class II", "III": "Class III" },
+            TN: { "I": "Class I", "II": "Class II" },
+            TX: { "I": "Class I", "II": "Class II" },
+            UT: { "I": "Class I", "III": "Class III" },
+            VT: { "I": "Class I", "III": "Class III" },
+            VA: { "I": "Class I", "II": "Class II" },
+            WA: { "I": "Class I", "III": "Class III" },
+            WV: { "I": "Class I", "II": "Class II" },
+            WI: { "I": "Class I", "III": "Class III" },
+            WY: { "I": "Class I", "II": "Class II" },
           };
-          const classChar = classToChar[district];
-          if (classChar) {
-            flattened = flattened.filter((candidate) =>
-              candidate.candidate_id?.includes(classChar)
-            );
+
+          // Filter candidates by Senate class based on their state
+          if (district !== "Special") {
+            flattened = flattened.filter((candidate) => {
+              const candidateState = candidate.state;
+              if (!candidateState) return false;
+
+              const stateClasses = stateClassMap[candidateState];
+              if (!stateClasses) return false;
+
+              // Check if this state has the selected class
+              return Object.keys(stateClasses).includes(district);
+            });
           }
         }
 

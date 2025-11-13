@@ -109,10 +109,11 @@ export function useDistrictOptions(
           if (queryError) throw queryError;
 
           const classMap: Record<string, string> = {
-            "0": "Class II",
-            "4": "Class I",
-            "6": "Class III",
-            "8": "Special",
+            "0": "Class II",   // 2020 election
+            "2": "Class III",  // 2022 election
+            "4": "Class I",    // 2024 election
+            "6": "Class II",   // 2026 election
+            "8": "Class III",  // 2028 election (or Special elections)
           };
 
           const uniqueClasses = Array.from(

@@ -24,6 +24,26 @@ const browserClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: false },
 });
 
+// Helper function to format names from "LAST, FIRST" to "First Last"
+function formatCandidateName(name: string): string {
+  if (!name) return name;
+
+  // Check if name is in "LAST, FIRST" format
+  if (name.includes(',')) {
+    const [last, first] = name.split(',').map(s => s.trim());
+
+    // Convert to title case
+    const titleCase = (str: string) => {
+      return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+    };
+
+    return `${titleCase(first)} ${titleCase(last)}`;
+  }
+
+  // If no comma, just apply title case
+  return name.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+}
+
 const METRIC_OPTIONS = [
   { value: "receipts", label: "Total Raised" },
   { value: "disbursements", label: "Total Spent" },
@@ -191,11 +211,35 @@ export function CommitteeView() {
     let cancelled = false;
     (async () => {
       try {
-        const { data, error } = await browserClient
+        // Build flexible search patterns to match "First Last" or "Last, First" formats
+        const trimmed = searchTerm.trim();
+        let query = browserClient
           .from("candidates")
-          .select("candidate_id, name, party")
-          .ilike("name", `%${searchTerm}%`)
-          .limit(8);
+          .select("candidate_id, name, party");
+
+        // If search term contains a comma, search as-is (user typing "Last, First")
+        if (trimmed.includes(',')) {
+          query = query.ilike("name", `%${trimmed}%`);
+        }
+        // If search term has spaces (e.g., "John Fetterman"), try both formats
+        else if (trimmed.includes(' ')) {
+          const parts = trimmed.split(/\s+/);
+          if (parts.length === 2) {
+            // Try "First Last" → "Last, First" conversion
+            const [first, last] = parts;
+            // Use OR to search for both "Last, First" and original term
+            query = query.or(`name.ilike.%${last}, ${first}%,name.ilike.%${trimmed}%`);
+          } else {
+            // Multiple words, just search as-is
+            query = query.ilike("name", `%${trimmed}%`);
+          }
+        }
+        // Single word - search anywhere in name (matches first or last name)
+        else {
+          query = query.ilike("name", `%${trimmed}%`);
+        }
+
+        const { data, error } = await query.limit(8);
 
         if (error) throw error;
 
@@ -203,7 +247,7 @@ export function CommitteeView() {
           data?.map((row) => ({
             type: "candidate" as const,
             id: row.candidate_id,
-            label: row.name,
+            label: formatCandidateName(row.name),
             party: row.party,
             subtitle: row.party ?? undefined,
           })) ?? [];

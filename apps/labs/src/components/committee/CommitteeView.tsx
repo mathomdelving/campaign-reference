@@ -214,35 +214,71 @@ export function CommitteeView() {
         // Build flexible search patterns to match "First Last" or "Last, First" formats
         const trimmed = searchTerm.trim();
 
-        // Strategy: Make broader query and filter results
-        // If search has spaces (e.g., "John Fetterman"), try to match "FETTERMAN, JOHN"
-        let searchPattern = trimmed;
+        let data = null;
+        let error = null;
 
+        // If search has spaces (likely "First Last" format), search both ways
         if (trimmed.includes(' ') && !trimmed.includes(',')) {
           const parts = trimmed.split(/\s+/);
           if (parts.length === 2) {
-            // Convert "First Last" to "Last, First" pattern
             const [first, last] = parts;
-            searchPattern = `${last}, ${first}`;
-            console.log(`[Committee Search] Converted "${trimmed}" → "${searchPattern}"`);
+
+            // Try "Last, First" pattern first (most common in DB)
+            const lastFirstPattern = `${last}, ${first}`;
+            console.log(`[Committee Search] Trying "Last, First": "${lastFirstPattern}"`);
+
+            const result1 = await browserClient
+              .from("candidates")
+              .select("candidate_id, name, party")
+              .ilike("name", `%${lastFirstPattern}%`)
+              .limit(20);
+
+            // If no results, try searching for names containing both words
+            if (!result1.data || result1.data.length === 0) {
+              console.log(`[Committee Search] No results, trying broader search for both "${first}" and "${last}"`);
+
+              // Search for last name in the name field (will match "LASTNAME, ")
+              const result2 = await browserClient
+                .from("candidates")
+                .select("candidate_id, name, party")
+                .ilike("name", `${last}%`)
+                .ilike("name", `%${first}%`)
+                .limit(20);
+
+              data = result2.data;
+              error = result2.error;
+            } else {
+              data = result1.data;
+              error = result1.error;
+            }
+          } else {
+            // More than 2 words, search as-is
+            const result = await browserClient
+              .from("candidates")
+              .select("candidate_id, name, party")
+              .ilike("name", `%${trimmed}%`)
+              .limit(20);
+            data = result.data;
+            error = result.error;
           }
         } else {
-          console.log(`[Committee Search] Using pattern as-is: "${searchPattern}"`);
+          // Single word or comma format - search as-is
+          console.log(`[Committee Search] Single word search: "${trimmed}"`);
+          const result = await browserClient
+            .from("candidates")
+            .select("candidate_id, name, party")
+            .ilike("name", `%${trimmed}%`)
+            .limit(20);
+          data = result.data;
+          error = result.error;
         }
-
-        // Query with the transformed pattern
-        const { data, error } = await browserClient
-          .from("candidates")
-          .select("candidate_id, name, party")
-          .ilike("name", `%${searchPattern}%`)
-          .limit(20); // Get more results since we might filter some out
 
         if (error) {
           console.error('[Committee Search] Query error:', error);
           throw error;
         }
 
-        console.log(`[Committee Search] Found ${data?.length || 0} candidates for pattern "${searchPattern}"`);
+        console.log(`[Committee Search] Found ${data?.length || 0} candidates`);
 
         const candidateResults: EntityResult[] =
           data?.map((row) => ({

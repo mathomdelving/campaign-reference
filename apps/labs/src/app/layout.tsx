@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   title: "Campaign Reference",
   description:
     "Campaign Reference visualization workspace for premium charts and export tooling.",
+  manifest: "/site.webmanifest",
   openGraph: {
     title: "Campaign Reference",
     description:

@@ -18,7 +18,7 @@ const libreBaskerville = Libre_Baskerville({
 });
 
 export const metadata: Metadata = {
-  title: "Campaign Reference Labs",
+  title: "Campaign Reference",
   description:
     "Campaign Reference visualization workspace for premium charts and export tooling.",
   openGraph: {

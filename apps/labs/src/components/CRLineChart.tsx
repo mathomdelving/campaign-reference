@@ -32,6 +32,7 @@ export interface CRLineChartProps {
   height?: number;
   showLegend?: boolean;
   yAxisFormatter?: (value: number) => string;
+  quarterlyTicks?: string[]; // Only show these tick labels on X-axis
 }
 
 const DEFAULT_SERIES: ChartSeriesConfig[] = [
@@ -113,6 +114,7 @@ function CRLineChartComponent({
   showLegend = true,
   yAxisFormatter = formatCompactCurrency,
   series = DEFAULT_SERIES,
+  quarterlyTicks,
 }: CRLineChartProps) {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -214,6 +216,7 @@ function CRLineChartComponent({
               fontSize: chartTheme.labelFontSize,
               fontFamily: chartTheme.labelFontFamily,
             }}
+            ticks={quarterlyTicks}
           />
           <YAxis
             stroke="#2B2F36"

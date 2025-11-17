@@ -191,7 +191,7 @@ export function CommitteeView() {
   const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, [2022, 2024, 2026]);
 
   // chartDataWithKeys keeps sortKey for filtering, chartData is the clean output
-  const { chartDataWithKeys, chartData } = useMemo(() => {
+  const { chartDataWithKeys, chartData, quarterlyTicks } = useMemo(() => {
     const map = new Map<string, ChartDatum & { sortKey: string; quarterKey: string }>();
 
     for (const record of candidateQuarterlies) {
@@ -261,9 +261,20 @@ export function CommitteeView() {
 
     const trimmed = sorted.slice(firstNonEmptyIndex);
 
+    // Extract quarterly tick labels (only pure quarters like "Q1 2021", not special filings)
+    const quarterTicks: string[] = [];
+    trimmed.forEach((datum) => {
+      const label = datum.quarter;
+      // Only include labels that match "Q# ####" pattern (pure quarterly filings)
+      if (label.match(/^Q[1-4]\s+\d{4}$/)) {
+        quarterTicks.push(label);
+      }
+    });
+
     return {
       chartDataWithKeys: trimmed,
-      chartData: trimmed.map(({ sortKey, quarterKey, ...datum }) => datum)
+      chartData: trimmed.map(({ sortKey, quarterKey, ...datum }) => datum),
+      quarterlyTicks: quarterTicks
     };
   }, [candidateQuarterlies, committeeQuarterlies, metric, candidateIds, committeeIds]);
 
@@ -310,9 +321,12 @@ export function CommitteeView() {
   }, [candidateQuarterlies, committeeQuarterlies]);
 
   // Filter chartData based on selected date range
-  const filteredChartData = useMemo(() => {
+  const { filteredChartData, filteredQuarterlyTicks } = useMemo(() => {
     if (!startQuarter && endQuarter === "present") {
-      return chartData; // No filtering
+      return {
+        filteredChartData: chartData,
+        filteredQuarterlyTicks: quarterlyTicks
+      }; // No filtering
     }
 
     // Filter using the chartDataWithKeys which has quarterKey
@@ -334,9 +348,19 @@ export function CommitteeView() {
       return true;
     });
 
+    // Filter quarterly ticks to only include those in the filtered data
+    const filteredTicks = quarterlyTicks.filter((tick) => {
+      if (startQuarter && sortQuarterLabels(tick, startQuarter) < 0) return false;
+      if (endQuarter !== "present" && sortQuarterLabels(tick, endQuarter) > 0) return false;
+      return true;
+    });
+
     // Remove sortKey and quarterKey from output
-    return filtered.map(({ sortKey, quarterKey, ...datum }) => datum);
-  }, [chartDataWithKeys, chartData, startQuarter, endQuarter]);
+    return {
+      filteredChartData: filtered.map(({ sortKey, quarterKey, ...datum }) => datum),
+      filteredQuarterlyTicks: filteredTicks
+    };
+  }, [chartDataWithKeys, chartData, quarterlyTicks, startQuarter, endQuarter]);
 
   const seriesConfig = useMemo<ChartSeriesConfig[]>(() => {
     return selectedEntities.map((entity, index) => ({
@@ -726,6 +750,7 @@ export function CommitteeView() {
               series={seriesConfig}
               height={420}
               yAxisFormatter={formatCurrencyLabel}
+              quarterlyTicks={filteredQuarterlyTicks}
             />
           </div>
         )}

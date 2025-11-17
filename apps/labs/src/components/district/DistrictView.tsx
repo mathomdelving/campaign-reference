@@ -108,7 +108,7 @@ export function DistrictView() {
     ? "disbursements"
     : "cashEnding";
 
-  const { chartData, seriesConfig } = useMemo(() => {
+  const { chartData, seriesConfig, quarterlyTicks } = useMemo(() => {
     const seriesMap = new Map<string, ChartDatum & { sortKey: string }>();
 
     for (const record of quarterlyData) {
@@ -153,6 +153,16 @@ export function DistrictView() {
 
     const trimmed = sorted.slice(firstNonEmptyIndex);
 
+    // Extract quarterly tick labels (only pure quarters like "Q1 2021", not special filings)
+    const quarterTicks: string[] = [];
+    trimmed.forEach((datum) => {
+      const label = datum.quarter;
+      // Only include labels that match "Q# ####" pattern (pure quarterly filings)
+      if (label.match(/^Q[1-4]\s+\d{4}$/)) {
+        quarterTicks.push(label);
+      }
+    });
+
     const config: ChartSeriesConfig[] = activeCandidateIds.map((candidateId, index) => {
       const candidate = sortedCandidates.find((item) => item.candidate_id === candidateId);
       return {
@@ -165,7 +175,8 @@ export function DistrictView() {
 
     return {
       chartData: trimmed.map(({ sortKey, ...datum }) => datum),
-      seriesConfig: config
+      seriesConfig: config,
+      quarterlyTicks: quarterTicks
     };
   }, [quarterlyData, activeCandidateIds, chartMetric, sortedCandidates]);
 
@@ -391,6 +402,7 @@ export function DistrictView() {
               series={seriesConfig}
               height={420}
               yAxisFormatter={(value) => formatCurrencyLabel(value)}
+              quarterlyTicks={quarterlyTicks}
             />
           </div>
         ) : (

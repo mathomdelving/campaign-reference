@@ -69,7 +69,7 @@ export function useCommitteeQuarterlyData(
         const { data: results, error: queryError } = await browserClient
           .from("quarterly_financials")
           .select(
-            "committee_id, committee_name, total_receipts, total_disbursements, cash_ending, coverage_end_date"
+            "committee_id, committee_name, total_receipts, total_disbursements, cash_ending, coverage_end_date, report_type"
           )
           .in("cycle", cyclesArray)
           .in("committee_id", committeeIds)
@@ -82,8 +82,8 @@ export function useCommitteeQuarterlyData(
             committeeId: row.committee_id,
             committeeName: row.committee_name,
             quarterLabel: row.coverage_end_date
-              ? formatQuarterLabel(row.coverage_end_date)
-              : "Unknown",
+              ? formatQuarterLabel(row.coverage_end_date, row.report_type)
+              : row.report_type ?? "Unknown",
             receipts: row.total_receipts ?? 0,
             disbursements: row.total_disbursements ?? 0,
             cashEnding: row.cash_ending ?? 0,

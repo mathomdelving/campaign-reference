@@ -104,7 +104,7 @@ export function useQuarterlyData(
             cashBeginning: row.cash_beginning ?? 0,
             cashEnding: row.cash_ending ?? 0,
             quarterLabel: row.coverage_end_date
-              ? formatQuarterLabel(row.coverage_end_date)
+              ? formatQuarterLabel(row.coverage_end_date, row.report_type)
               : row.report_type ?? "Unknown",
           })) ?? [];
 

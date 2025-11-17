@@ -153,24 +153,16 @@ export function DistrictView() {
 
     const trimmed = sorted.slice(firstNonEmptyIndex);
 
-    // Extract quarterly tick labels (only pure quarters like "Q1 2021", not special filings)
-    // Note: Year-End filings are Q4 filings
+    // Extract quarterly tick labels from all filings (including special filings)
+    // Use sortKey to extract the quarter, since display label may be cleaned
     const quarterTicks: string[] = [];
     const quarterSet = new Set<string>();
 
     trimmed.forEach((datum) => {
-      const label = datum.quarter;
-      // Check if this is a pure quarter label (Q1-Q4 YYYY)
-      if (label.match(/^Q[1-4]\s+\d{4}$/)) {
-        quarterSet.add(label);
-      }
-      // Also check if this is a Year-End filing (treat as Q4)
-      else if (label.toLowerCase().includes('year-end') || label === 'Year-End') {
-        // Extract year from sortKey
-        const match = datum.sortKey.match(/Q4\s+(\d{4})/);
-        if (match) {
-          quarterSet.add(`Q4 ${match[1]}`);
-        }
+      // Extract Q# YYYY from sortKey (works for both regular and special filings)
+      const match = datum.sortKey.match(/Q([1-4])\s+(\d{4})/);
+      if (match) {
+        quarterSet.add(`Q${match[1]} ${match[2]}`);
       }
     });
 

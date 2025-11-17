@@ -42,6 +42,25 @@ export function formatQuarterLabel(coverageEndDate: string | Date, reportType?: 
   return `${displayName} Q${quarter} ${year}.${monthPadded}.${dayPadded}`;
 }
 
+export function getDisplayLabel(quarterLabel: string): string {
+  // Strip date suffix for special filings to create clean tooltip labels
+  // "PRE-RUN-OFF Q4 2022.11.16" → "PRE-RUN-OFF"
+  // "Q4 2022" → "Q4 2022" (unchanged)
+
+  // If label starts with Q, it's a standard quarter - return as-is
+  if (quarterLabel.match(/^Q[1-4]/)) {
+    return quarterLabel;
+  }
+
+  // For special filings, extract just the report type name before " Q"
+  const match = quarterLabel.match(/^(.+?)\s+Q[1-4]/);
+  if (match) {
+    return match[1];
+  }
+
+  return quarterLabel;
+}
+
 export function sortQuarterLabels(a: string, b: string) {
   // Match standard quarters: "Q1 2022"
   // Or special filings: "PRE-GENERAL Q4 2022.10.19", "Year-End Q4 2022.12.31"

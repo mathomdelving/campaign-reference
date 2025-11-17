@@ -13,7 +13,7 @@ import type { ChartDatum, ChartSeriesConfig } from "@/components/CRLineChart";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { getChartColor } from "@/lib/chartTheme";
-import { sortQuarterLabels } from "@/utils/quarters";
+import { sortQuarterLabels, getDisplayLabel } from "@/utils/quarters";
 
 export function DistrictView() {
   const [cycle, setCycle] = useState<number>(2026);
@@ -109,7 +109,7 @@ export function DistrictView() {
     : "cashEnding";
 
   const { chartData, seriesConfig } = useMemo(() => {
-    const seriesMap = new Map<string, ChartDatum>();
+    const seriesMap = new Map<string, ChartDatum & { sortKey: string }>();
 
     for (const record of quarterlyData) {
       if (!activeCandidateIds.includes(record.candidateId)) continue;
@@ -118,7 +118,10 @@ export function DistrictView() {
       // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
       const key = `${record.quarterLabel}-${record.coverageEnd || ''}`;
       if (!seriesMap.has(key)) {
-        seriesMap.set(key, { quarter: record.quarterLabel });
+        seriesMap.set(key, {
+          quarter: getDisplayLabel(record.quarterLabel),  // Clean label for tooltip
+          sortKey: record.quarterLabel  // Full label for sorting
+        });
       }
 
       const datum = seriesMap.get(key)!;
@@ -131,7 +134,7 @@ export function DistrictView() {
     }
 
     const sorted = Array.from(seriesMap.values()).sort((a, b) =>
-      sortQuarterLabels(a.quarter, b.quarter)
+      sortQuarterLabels(a.sortKey, b.sortKey)
     );
 
     // Trim leading empty quarters - find first quarter with any non-zero data
@@ -160,7 +163,10 @@ export function DistrictView() {
       };
     });
 
-    return { chartData: trimmed, seriesConfig: config };
+    return {
+      chartData: trimmed.map(({ sortKey, ...datum }) => datum),
+      seriesConfig: config
+    };
   }, [quarterlyData, activeCandidateIds, chartMetric, sortedCandidates]);
 
   const handleCandidateToggle = (candidateId: string) => {

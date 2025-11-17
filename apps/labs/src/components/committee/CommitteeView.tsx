@@ -8,7 +8,7 @@ import { useQuarterlyData } from "@/hooks/useQuarterlyData";
 import { useCommitteeQuarterlyData } from "@/hooks/useCommitteeQuarterlyData";
 import { getPartyColor, formatCurrency } from "@/utils/formatters";
 import { FollowButton } from "@/components/follow/FollowButton";
-import { sortQuarterLabels } from "@/utils/quarters";
+import { sortQuarterLabels, getDisplayLabel } from "@/utils/quarters";
 import { getChartColor } from "@/lib/chartTheme";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -189,13 +189,18 @@ export function CommitteeView() {
   const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, [2022, 2024, 2026]);
 
   const chartData = useMemo<ChartDatum[]>(() => {
-    const map = new Map<string, ChartDatum>();
+    const map = new Map<string, ChartDatum & { sortKey: string }>();
 
     for (const record of candidateQuarterlies) {
       if (!record.quarterLabel || !candidateIds.includes(record.candidateId)) continue;
       // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
       const key = `${record.quarterLabel}-${record.coverageEnd || ''}`;
-      if (!map.has(key)) map.set(key, { quarter: record.quarterLabel });
+      if (!map.has(key)) {
+        map.set(key, {
+          quarter: getDisplayLabel(record.quarterLabel),  // Clean label for tooltip
+          sortKey: record.quarterLabel  // Full label for sorting
+        });
+      }
       const datum = map.get(key)!;
       datum[record.candidateId] =
         metric === "receipts"
@@ -209,7 +214,12 @@ export function CommitteeView() {
       if (!record.quarterLabel || !committeeIds.includes(record.committeeId)) continue;
       // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
       const key = `${record.quarterLabel}-${record.coverageEnd || ''}`;
-      if (!map.has(key)) map.set(key, { quarter: record.quarterLabel });
+      if (!map.has(key)) {
+        map.set(key, {
+          quarter: getDisplayLabel(record.quarterLabel),  // Clean label for tooltip
+          sortKey: record.quarterLabel  // Full label for sorting
+        });
+      }
       const datum = map.get(key)!;
       datum[record.committeeId] =
         metric === "receipts"
@@ -219,8 +229,8 @@ export function CommitteeView() {
           : record.cashEnding;
     }
 
-    // Sort chronologically using the quarter sorting utility
-    const sorted = Array.from(map.values()).sort((a, b) => sortQuarterLabels(a.quarter, b.quarter));
+    // Sort chronologically using the full label with date
+    const sorted = Array.from(map.values()).sort((a, b) => sortQuarterLabels(a.sortKey, b.sortKey));
 
     // Trim leading empty quarters - find first quarter with any non-zero data
     const allEntityIds = [...candidateIds, ...committeeIds];
@@ -237,7 +247,9 @@ export function CommitteeView() {
       }
     }
 
-    return sorted.slice(firstNonEmptyIndex);
+    // Remove sortKey from output - only needed for sorting
+    const trimmed = sorted.slice(firstNonEmptyIndex);
+    return trimmed.map(({ sortKey, ...datum }) => datum);
   }, [candidateQuarterlies, committeeQuarterlies, metric, candidateIds, committeeIds]);
 
   const seriesConfig = useMemo<ChartSeriesConfig[]>(() => {

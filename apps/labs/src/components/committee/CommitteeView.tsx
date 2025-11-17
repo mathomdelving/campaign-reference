@@ -193,8 +193,9 @@ export function CommitteeView() {
 
     for (const record of candidateQuarterlies) {
       if (!record.quarterLabel || !candidateIds.includes(record.candidateId)) continue;
-      const key = record.quarterLabel;
-      if (!map.has(key)) map.set(key, { quarter: key });
+      // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
+      const key = `${record.quarterLabel}-${record.coverageEnd || ''}`;
+      if (!map.has(key)) map.set(key, { quarter: record.quarterLabel });
       const datum = map.get(key)!;
       datum[record.candidateId] =
         metric === "receipts"
@@ -206,8 +207,9 @@ export function CommitteeView() {
 
     for (const record of committeeQuarterlies) {
       if (!record.quarterLabel || !committeeIds.includes(record.committeeId)) continue;
-      const key = record.quarterLabel;
-      if (!map.has(key)) map.set(key, { quarter: key });
+      // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
+      const key = `${record.quarterLabel}-${record.coverageEnd || ''}`;
+      if (!map.has(key)) map.set(key, { quarter: record.quarterLabel });
       const datum = map.get(key)!;
       datum[record.committeeId] =
         metric === "receipts"

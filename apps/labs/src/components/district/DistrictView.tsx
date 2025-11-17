@@ -13,6 +13,7 @@ import type { ChartDatum, ChartSeriesConfig } from "@/components/CRLineChart";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { getChartColor } from "@/lib/chartTheme";
+import { sortQuarterLabels } from "@/utils/quarters";
 
 export function DistrictView() {
   const [cycle, setCycle] = useState<number>(2026);
@@ -114,9 +115,10 @@ export function DistrictView() {
       if (!activeCandidateIds.includes(record.candidateId)) continue;
       if (!record.quarterLabel) continue;
 
-      const key = record.quarterLabel;
+      // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
+      const key = `${record.quarterLabel}-${record.coverageEnd || ''}`;
       if (!seriesMap.has(key)) {
-        seriesMap.set(key, { quarter: key });
+        seriesMap.set(key, { quarter: record.quarterLabel });
       }
 
       const datum = seriesMap.get(key)!;
@@ -129,7 +131,7 @@ export function DistrictView() {
     }
 
     const sorted = Array.from(seriesMap.values()).sort((a, b) =>
-      a.quarter.localeCompare(b.quarter)
+      sortQuarterLabels(a.quarter, b.quarter)
     );
 
     // Trim leading empty quarters - find first quarter with any non-zero data

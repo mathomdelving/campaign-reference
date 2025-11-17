@@ -174,6 +174,8 @@ export function CommitteeView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<EntityResult[]>([]);
   const [selectedEntities, setSelectedEntities] = useState<EntitySelection[]>([]);
+  const [startQuarter, setStartQuarter] = useState<string | null>(null);
+  const [endQuarter, setEndQuarter] = useState<string>("present");
   const cycle = 2026;
 
   const candidateIds = useMemo(
@@ -188,17 +190,23 @@ export function CommitteeView() {
   const { data: candidateQuarterlies } = useQuarterlyData(candidateIds, [2022, 2024, 2026]);
   const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, [2022, 2024, 2026]);
 
-  const chartData = useMemo<ChartDatum[]>(() => {
-    const map = new Map<string, ChartDatum & { sortKey: string }>();
+  // chartDataWithKeys keeps sortKey for filtering, chartData is the clean output
+  const { chartDataWithKeys, chartData } = useMemo(() => {
+    const map = new Map<string, ChartDatum & { sortKey: string; quarterKey: string }>();
 
     for (const record of candidateQuarterlies) {
       if (!record.quarterLabel || !candidateIds.includes(record.candidateId)) continue;
       // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
       const key = `${record.quarterLabel}-${record.coverageEnd || ''}`;
       if (!map.has(key)) {
+        // Extract quarter for comparison (e.g., "Q4 2022")
+        const match = record.quarterLabel.match(/Q([1-4])\s+(\d{4})/);
+        const quarterKey = match ? `Q${match[1]} ${match[2]}` : record.quarterLabel;
+
         map.set(key, {
           quarter: getDisplayLabel(record.quarterLabel),  // Clean label for tooltip
-          sortKey: record.quarterLabel  // Full label for sorting
+          sortKey: record.quarterLabel,  // Full label for sorting
+          quarterKey  // Quarter key for filtering
         });
       }
       const datum = map.get(key)!;
@@ -215,9 +223,13 @@ export function CommitteeView() {
       // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
       const key = `${record.quarterLabel}-${record.coverageEnd || ''}`;
       if (!map.has(key)) {
+        const match = record.quarterLabel.match(/Q([1-4])\s+(\d{4})/);
+        const quarterKey = match ? `Q${match[1]} ${match[2]}` : record.quarterLabel;
+
         map.set(key, {
           quarter: getDisplayLabel(record.quarterLabel),  // Clean label for tooltip
-          sortKey: record.quarterLabel  // Full label for sorting
+          sortKey: record.quarterLabel,  // Full label for sorting
+          quarterKey
         });
       }
       const datum = map.get(key)!;
@@ -247,10 +259,84 @@ export function CommitteeView() {
       }
     }
 
-    // Remove sortKey from output - only needed for sorting
     const trimmed = sorted.slice(firstNonEmptyIndex);
-    return trimmed.map(({ sortKey, ...datum }) => datum);
+
+    return {
+      chartDataWithKeys: trimmed,
+      chartData: trimmed.map(({ sortKey, quarterKey, ...datum }) => datum)
+    };
   }, [candidateQuarterlies, committeeQuarterlies, metric, candidateIds, committeeIds]);
+
+  // Extract unique quarters from chartData for date range selector
+  const availableQuarters = useMemo(() => {
+    const map = new Map<string, { sortKey: string }>();
+
+    for (const record of candidateQuarterlies) {
+      if (!record.quarterLabel) continue;
+      // Extract just the quarter part (e.g., "Q4 2022" from "PRE-GENERAL Q4 2022.10.19")
+      const match = record.quarterLabel.match(/Q([1-4])\s+(\d{4})/);
+      if (match) {
+        const quarterKey = `Q${match[1]} ${match[2]}`;
+        if (!map.has(quarterKey)) {
+          map.set(quarterKey, { sortKey: record.quarterLabel });
+        }
+      }
+    }
+
+    for (const record of committeeQuarterlies) {
+      if (!record.quarterLabel) continue;
+      const match = record.quarterLabel.match(/Q([1-4])\s+(\d{4})/);
+      if (match) {
+        const quarterKey = `Q${match[1]} ${match[2]}`;
+        if (!map.has(quarterKey)) {
+          map.set(quarterKey, { sortKey: record.quarterLabel });
+        }
+      }
+    }
+
+    // Sort and format for display (reverse chronological)
+    const quarters = Array.from(map.entries())
+      .map(([quarterKey, { sortKey }]) => ({ quarterKey, sortKey }))
+      .sort((a, b) => sortQuarterLabels(b.sortKey, a.sortKey)); // Reverse sort
+
+    return quarters.map(({ quarterKey }) => {
+      // Convert "Q4 2022" to "2022 - Q4"
+      const match = quarterKey.match(/Q([1-4])\s+(\d{4})/);
+      if (match) {
+        return { value: quarterKey, label: `${match[2]} - Q${match[1]}` };
+      }
+      return { value: quarterKey, label: quarterKey };
+    });
+  }, [candidateQuarterlies, committeeQuarterlies]);
+
+  // Filter chartData based on selected date range
+  const filteredChartData = useMemo(() => {
+    if (!startQuarter && endQuarter === "present") {
+      return chartData; // No filtering
+    }
+
+    // Filter using the chartDataWithKeys which has quarterKey
+    const filtered = chartDataWithKeys.filter((datum) => {
+      const { quarterKey } = datum;
+
+      // Check start boundary
+      if (startQuarter) {
+        const comparison = sortQuarterLabels(quarterKey, startQuarter);
+        if (comparison < 0) return false; // quarterKey is before startQuarter
+      }
+
+      // Check end boundary
+      if (endQuarter !== "present") {
+        const comparison = sortQuarterLabels(quarterKey, endQuarter);
+        if (comparison > 0) return false; // quarterKey is after endQuarter
+      }
+
+      return true;
+    });
+
+    // Remove sortKey and quarterKey from output
+    return filtered.map(({ sortKey, quarterKey, ...datum }) => datum);
+  }, [chartDataWithKeys, chartData, startQuarter, endQuarter]);
 
   const seriesConfig = useMemo<ChartSeriesConfig[]>(() => {
     return selectedEntities.map((entity, index) => ({
@@ -474,6 +560,17 @@ export function CommitteeView() {
     };
   }, [searchTerm]);
 
+  // Validate date range - ensure start is before end
+  useEffect(() => {
+    if (startQuarter && endQuarter !== "present") {
+      const comparison = sortQuarterLabels(startQuarter, endQuarter);
+      if (comparison > 0) {
+        // Start is after end, reset end to "present"
+        setEndQuarter("present");
+      }
+    }
+  }, [startQuarter, endQuarter]);
+
   const handleSelectEntity = (entity: EntitySelection) => {
     setSelectedEntities((prev) => {
       const exists = prev.some((item) => entityKey(item) === entityKey(entity));
@@ -517,6 +614,43 @@ export function CommitteeView() {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">Date Range</h2>
+          <div className="flex gap-3 items-center">
+            <div className="flex items-center gap-2">
+              <label className="text-xs uppercase tracking-[0.1rem] text-gray-600">From:</label>
+              <select
+                value={startQuarter || ""}
+                onChange={(e) => setStartQuarter(e.target.value || null)}
+                className="border border-gray-300 bg-white px-3 py-2 text-xs uppercase tracking-[0.1rem] text-gray-900 focus:border-rb-brand-navy focus:outline-none"
+              >
+                <option value="">Earliest</option>
+                {availableQuarters.map((q) => (
+                  <option key={q.value} value={q.value}>
+                    {q.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-xs uppercase tracking-[0.1rem] text-gray-600">To:</label>
+              <select
+                value={endQuarter}
+                onChange={(e) => setEndQuarter(e.target.value)}
+                className="border border-gray-300 bg-white px-3 py-2 text-xs uppercase tracking-[0.1rem] text-gray-900 focus:border-rb-brand-navy focus:outline-none"
+              >
+                <option value="present">Present</option>
+                {availableQuarters.map((q) => (
+                  <option key={q.value} value={q.value}>
+                    {q.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -579,14 +713,16 @@ export function CommitteeView() {
           <span>{selectedEntities.length} entities</span>
         </div>
 
-        {chartData.length === 0 ? (
+        {filteredChartData.length === 0 ? (
           <div className="p-12 text-center text-sm text-gray-600">
-            Add at least one candidate or committee to render the chart.
+            {chartData.length === 0
+              ? "Add at least one candidate or committee to render the chart."
+              : "No data available for the selected date range."}
           </div>
         ) : (
           <div className="p-6">
             <CRLineChart
-              data={chartData}
+              data={filteredChartData}
               series={seriesConfig}
               height={420}
               yAxisFormatter={formatCurrencyLabel}

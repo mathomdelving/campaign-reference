@@ -23,7 +23,13 @@ export interface ChartSeriesConfig {
 
 export interface ChartDatum {
   quarter: string;
+  timestamp: number;  // Unix timestamp for X-axis positioning
   [key: string]: string | number;
+}
+
+export interface QuarterlyTick {
+  label: string;
+  timestamp: number;
 }
 
 export interface CRLineChartProps {
@@ -32,7 +38,7 @@ export interface CRLineChartProps {
   height?: number;
   showLegend?: boolean;
   yAxisFormatter?: (value: number) => string;
-  quarterlyTicks?: string[]; // Only show these tick labels on X-axis
+  quarterlyTicks?: QuarterlyTick[]; // Quarterly tick labels with timestamps
 }
 
 const DEFAULT_SERIES: ChartSeriesConfig[] = [
@@ -195,6 +201,24 @@ function CRLineChartComponent({
     return ticks;
   }, [isMobile, data, activeSeries]);
 
+  // Create tick formatter for quarterly labels
+  const xAxisTickFormatter = useMemo(() => {
+    if (!quarterlyTicks) return undefined;
+
+    // Create a map of timestamps to labels
+    const tickMap = new Map<number, string>();
+    quarterlyTicks.forEach(tick => {
+      tickMap.set(tick.timestamp, tick.label);
+    });
+
+    return (value: number) => tickMap.get(value) || "";
+  }, [quarterlyTicks]);
+
+  // Extract tick timestamps for X-axis
+  const xAxisTicks = useMemo(() => {
+    return quarterlyTicks?.map(t => t.timestamp);
+  }, [quarterlyTicks]);
+
   return (
     <div className="h-full w-full rounded-2xl border border-rb-border bg-rb-white p-3 sm:p-6">
       <ResponsiveContainer width="100%" height={height}>
@@ -207,7 +231,9 @@ function CRLineChartComponent({
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#B0B0B0" opacity={0.4} />
           <XAxis
-            dataKey="quarter"
+            type="number"
+            dataKey="timestamp"
+            domain={['dataMin', 'dataMax']}
             stroke="#2B2F36"
             tickLine={false}
             axisLine={{ stroke: "#E4E4E7" }}
@@ -216,7 +242,8 @@ function CRLineChartComponent({
               fontSize: chartTheme.labelFontSize,
               fontFamily: chartTheme.labelFontFamily,
             }}
-            ticks={quarterlyTicks}
+            ticks={xAxisTicks}
+            tickFormatter={xAxisTickFormatter}
           />
           <YAxis
             stroke="#2B2F36"

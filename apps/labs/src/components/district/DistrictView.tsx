@@ -109,18 +109,24 @@ export function DistrictView() {
     : "cashEnding";
 
   const { chartData, seriesConfig, quarterlyTicks } = useMemo(() => {
-    const seriesMap = new Map<string, ChartDatum & { sortKey: string }>();
+    const seriesMap = new Map<string, ChartDatum & { sortKey: string; timestamp: number; coverageEnd: string }>();
 
     for (const record of quarterlyData) {
       if (!activeCandidateIds.includes(record.candidateId)) continue;
       if (!record.quarterLabel) continue;
+      if (!record.coverageEnd) continue;
 
       // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
-      const key = `${record.quarterLabel}-${record.coverageEnd || ''}`;
+      const key = `${record.quarterLabel}-${record.coverageEnd}`;
       if (!seriesMap.has(key)) {
+        // Convert coverageEnd to timestamp for numeric X-axis
+        const timestamp = new Date(record.coverageEnd).getTime();
+
         seriesMap.set(key, {
           quarter: getDisplayLabel(record.quarterLabel),  // Clean label for tooltip
-          sortKey: record.quarterLabel  // Full label for sorting
+          sortKey: record.quarterLabel,  // Full label for sorting
+          timestamp,  // Timestamp for X-axis positioning
+          coverageEnd: record.coverageEnd  // Keep for reference
         });
       }
 
@@ -153,27 +159,39 @@ export function DistrictView() {
 
     const trimmed = sorted.slice(firstNonEmptyIndex);
 
-    // Extract quarterly tick labels from all filings (including special filings)
-    // Use sortKey to extract the quarter, since display label may be cleaned
-    const quarterTicks: string[] = [];
+    // Extract unique quarters for tick calculation
     const quarterSet = new Set<string>();
-
     trimmed.forEach((datum) => {
-      // Extract Q# YYYY from sortKey (works for both regular and special filings)
       const match = datum.sortKey.match(/Q([1-4])\s+(\d{4})/);
       if (match) {
         quarterSet.add(`Q${match[1]} ${match[2]}`);
       }
     });
 
-    const sortedQuarterTicks = Array.from(quarterSet).sort((a, b) => sortQuarterLabels(a, b));
+    const sortedQuarters = Array.from(quarterSet).sort((a, b) => sortQuarterLabels(a, b));
 
-    // If we have more than 12 quarters, show only Q1 and Q3 to save space
-    if (sortedQuarterTicks.length > 12) {
-      quarterTicks.push(...sortedQuarterTicks.filter(q => q.match(/Q[13]\s+\d{4}/)));
-    } else {
-      quarterTicks.push(...sortedQuarterTicks);
-    }
+    // Calculate quarterly tick timestamps (Q1=Mar 31, Q2=Jun 30, Q3=Sep 30, Q4=Dec 31)
+    const quarterlyTicks = sortedQuarters.map(q => {
+      const match = q.match(/Q([1-4])\s+(\d{4})/);
+      if (!match) return { label: q, timestamp: 0 };
+
+      const quarter = parseInt(match[1]);
+      const year = parseInt(match[2]);
+
+      // Quarter end dates: Q1=March 31, Q2=June 30, Q3=Sept 30, Q4=Dec 31
+      const month = quarter * 3 - 1; // 2, 5, 8, 11 (0-indexed)
+      const lastDay = new Date(year, month + 1, 0).getDate(); // Get last day of month
+
+      return {
+        label: q,
+        timestamp: new Date(year, month, lastDay).getTime()
+      };
+    });
+
+    // If more than 12 quarters, show only Q1 and Q3
+    const displayTicks = quarterlyTicks.length > 12
+      ? quarterlyTicks.filter(t => t.label.match(/Q[13]\s+\d{4}/))
+      : quarterlyTicks;
 
     const config: ChartSeriesConfig[] = activeCandidateIds.map((candidateId, index) => {
       const candidate = sortedCandidates.find((item) => item.candidate_id === candidateId);
@@ -186,9 +204,9 @@ export function DistrictView() {
     });
 
     return {
-      chartData: trimmed.map(({ sortKey, ...datum }) => datum),
+      chartData: trimmed.map(({ sortKey, coverageEnd, ...datum }) => datum),
       seriesConfig: config,
-      quarterlyTicks: quarterTicks
+      quarterlyTicks: displayTicks
     };
   }, [quarterlyData, activeCandidateIds, chartMetric, sortedCandidates]);
 

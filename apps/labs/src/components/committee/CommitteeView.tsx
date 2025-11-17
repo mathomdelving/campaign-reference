@@ -192,21 +192,28 @@ export function CommitteeView() {
 
   // chartDataWithKeys keeps sortKey for filtering, chartData is the clean output
   const { chartDataWithKeys, chartData, quarterlyTicks } = useMemo(() => {
-    const map = new Map<string, ChartDatum & { sortKey: string; quarterKey: string }>();
+    const map = new Map<string, ChartDatum & { sortKey: string; quarterKey: string; timestamp: number; coverageEnd: string }>();
 
     for (const record of candidateQuarterlies) {
       if (!record.quarterLabel || !candidateIds.includes(record.candidateId)) continue;
+      if (!record.coverageEnd) continue;
+
       // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
-      const key = `${record.quarterLabel}-${record.coverageEnd || ''}`;
+      const key = `${record.quarterLabel}-${record.coverageEnd}`;
       if (!map.has(key)) {
         // Extract quarter for comparison (e.g., "Q4 2022")
         const match = record.quarterLabel.match(/Q([1-4])\s+(\d{4})/);
         const quarterKey = match ? `Q${match[1]} ${match[2]}` : record.quarterLabel;
 
+        // Convert coverageEnd to timestamp for numeric X-axis
+        const timestamp = new Date(record.coverageEnd).getTime();
+
         map.set(key, {
           quarter: getDisplayLabel(record.quarterLabel),  // Clean label for tooltip
           sortKey: record.quarterLabel,  // Full label for sorting
-          quarterKey  // Quarter key for filtering
+          quarterKey,  // Quarter key for filtering
+          timestamp,  // Timestamp for X-axis positioning
+          coverageEnd: record.coverageEnd  // Keep for reference
         });
       }
       const datum = map.get(key)!;
@@ -220,16 +227,22 @@ export function CommitteeView() {
 
     for (const record of committeeQuarterlies) {
       if (!record.quarterLabel || !committeeIds.includes(record.committeeId)) continue;
+      if (!record.coverageEnd) continue;
+
       // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
-      const key = `${record.quarterLabel}-${record.coverageEnd || ''}`;
+      const key = `${record.quarterLabel}-${record.coverageEnd}`;
       if (!map.has(key)) {
         const match = record.quarterLabel.match(/Q([1-4])\s+(\d{4})/);
         const quarterKey = match ? `Q${match[1]} ${match[2]}` : record.quarterLabel;
 
+        const timestamp = new Date(record.coverageEnd).getTime();
+
         map.set(key, {
           quarter: getDisplayLabel(record.quarterLabel),  // Clean label for tooltip
           sortKey: record.quarterLabel,  // Full label for sorting
-          quarterKey
+          quarterKey,
+          timestamp,
+          coverageEnd: record.coverageEnd
         });
       }
       const datum = map.get(key)!;
@@ -261,32 +274,44 @@ export function CommitteeView() {
 
     const trimmed = sorted.slice(firstNonEmptyIndex);
 
-    // Extract quarterly tick labels from all filings (including special filings)
-    // Use sortKey to extract the quarter, since display label may be cleaned
-    const quarterTicks: string[] = [];
+    // Extract unique quarters for tick calculation
     const quarterSet = new Set<string>();
-
     trimmed.forEach((datum) => {
-      // Extract Q# YYYY from sortKey (works for both regular and special filings)
       const match = datum.sortKey.match(/Q([1-4])\s+(\d{4})/);
       if (match) {
         quarterSet.add(`Q${match[1]} ${match[2]}`);
       }
     });
 
-    const sortedQuarterTicks = Array.from(quarterSet).sort((a, b) => sortQuarterLabels(a, b));
+    const sortedQuarters = Array.from(quarterSet).sort((a, b) => sortQuarterLabels(a, b));
 
-    // If we have more than 12 quarters, show only Q1 and Q3 to save space
-    if (sortedQuarterTicks.length > 12) {
-      quarterTicks.push(...sortedQuarterTicks.filter(q => q.match(/Q[13]\s+\d{4}/)));
-    } else {
-      quarterTicks.push(...sortedQuarterTicks);
-    }
+    // Calculate quarterly tick timestamps (Q1=Mar 31, Q2=Jun 30, Q3=Sep 30, Q4=Dec 31)
+    const quarterlyTicks = sortedQuarters.map(q => {
+      const match = q.match(/Q([1-4])\s+(\d{4})/);
+      if (!match) return { label: q, timestamp: 0 };
+
+      const quarter = parseInt(match[1]);
+      const year = parseInt(match[2]);
+
+      // Quarter end dates: Q1=March 31, Q2=June 30, Q3=Sept 30, Q4=Dec 31
+      const month = quarter * 3 - 1; // 2, 5, 8, 11 (0-indexed)
+      const lastDay = new Date(year, month + 1, 0).getDate(); // Get last day of month
+
+      return {
+        label: q,
+        timestamp: new Date(year, month, lastDay).getTime()
+      };
+    });
+
+    // If more than 12 quarters, show only Q1 and Q3
+    const displayTicks = quarterlyTicks.length > 12
+      ? quarterlyTicks.filter(t => t.label.match(/Q[13]\s+\d{4}/))
+      : quarterlyTicks;
 
     return {
       chartDataWithKeys: trimmed,
-      chartData: trimmed.map(({ sortKey, quarterKey, ...datum }) => datum),
-      quarterlyTicks: quarterTicks
+      chartData: trimmed.map(({ sortKey, quarterKey, coverageEnd, ...datum }) => datum),
+      quarterlyTicks: displayTicks
     };
   }, [candidateQuarterlies, committeeQuarterlies, metric, candidateIds, committeeIds]);
 
@@ -362,14 +387,14 @@ export function CommitteeView() {
 
     // Filter quarterly ticks to only include those in the filtered data
     const filteredTicks = quarterlyTicks.filter((tick) => {
-      if (startQuarter && sortQuarterLabels(tick, startQuarter) < 0) return false;
-      if (endQuarter !== "present" && sortQuarterLabels(tick, endQuarter) > 0) return false;
+      if (startQuarter && sortQuarterLabels(tick.label, startQuarter) < 0) return false;
+      if (endQuarter !== "present" && sortQuarterLabels(tick.label, endQuarter) > 0) return false;
       return true;
     });
 
-    // Remove sortKey and quarterKey from output
+    // Remove sortKey, quarterKey, and coverageEnd from output
     return {
-      filteredChartData: filtered.map(({ sortKey, quarterKey, ...datum }) => datum),
+      filteredChartData: filtered.map(({ sortKey, quarterKey, coverageEnd, ...datum }) => datum),
       filteredQuarterlyTicks: filteredTicks
     };
   }, [chartDataWithKeys, chartData, quarterlyTicks, startQuarter, endQuarter]);

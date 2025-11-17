@@ -262,14 +262,34 @@ export function CommitteeView() {
     const trimmed = sorted.slice(firstNonEmptyIndex);
 
     // Extract quarterly tick labels (only pure quarters like "Q1 2021", not special filings)
+    // Note: Year-End filings are Q4 filings
     const quarterTicks: string[] = [];
+    const quarterSet = new Set<string>();
+
     trimmed.forEach((datum) => {
       const label = datum.quarter;
-      // Only include labels that match "Q# ####" pattern (pure quarterly filings)
+      // Check if this is a pure quarter label (Q1-Q4 YYYY)
       if (label.match(/^Q[1-4]\s+\d{4}$/)) {
-        quarterTicks.push(label);
+        quarterSet.add(label);
+      }
+      // Also check if this is a Year-End filing (treat as Q4)
+      else if (label.toLowerCase().includes('year-end') || label === 'Year-End') {
+        // Extract year from sortKey
+        const match = datum.sortKey.match(/Q4\s+(\d{4})/);
+        if (match) {
+          quarterSet.add(`Q4 ${match[1]}`);
+        }
       }
     });
+
+    const sortedQuarterTicks = Array.from(quarterSet).sort((a, b) => sortQuarterLabels(a, b));
+
+    // If we have more than 12 quarters, show only Q1 and Q3 to save space
+    if (sortedQuarterTicks.length > 12) {
+      quarterTicks.push(...sortedQuarterTicks.filter(q => q.match(/Q[13]\s+\d{4}/)));
+    } else {
+      quarterTicks.push(...sortedQuarterTicks);
+    }
 
     return {
       chartDataWithKeys: trimmed,

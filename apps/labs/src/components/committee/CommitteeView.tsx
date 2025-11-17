@@ -185,8 +185,8 @@ export function CommitteeView() {
     [selectedEntities]
   );
 
-  const { data: candidateQuarterlies } = useQuarterlyData(candidateIds, [2024, 2026]);
-  const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, [2024, 2026]);
+  const { data: candidateQuarterlies } = useQuarterlyData(candidateIds, [2022, 2024, 2026]);
+  const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, [2022, 2024, 2026]);
 
   const chartData = useMemo<ChartDatum[]>(() => {
     const map = new Map<string, ChartDatum>();

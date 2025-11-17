@@ -162,7 +162,7 @@ export function DistrictView() {
     }
 
     const sorted = Array.from(seriesMap.values()).sort((a, b) =>
-      sortQuarterLabels(a.sortKey, b.sortKey)
+      a.timestamp - b.timestamp
     );
 
     // Trim leading empty quarters - find first quarter with any non-zero data

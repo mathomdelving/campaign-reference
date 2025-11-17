@@ -298,8 +298,8 @@ export function CommitteeView() {
           : record.cashEnding;
     }
 
-    // Sort chronologically using the full label with date
-    const sorted = Array.from(map.values()).sort((a, b) => sortQuarterLabels(a.sortKey, b.sortKey));
+    // Sort chronologically by timestamp
+    const sorted = Array.from(map.values()).sort((a, b) => a.timestamp - b.timestamp);
 
     // Trim leading empty quarters - find first quarter with any non-zero data
     const allEntityIds = [...candidateIds, ...committeeIds];

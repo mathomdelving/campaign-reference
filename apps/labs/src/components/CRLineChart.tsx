@@ -79,18 +79,29 @@ function TooltipContent({
   active,
   label,
   payload,
+  chartData,
 }: {
   active?: boolean;
-  label?: string;
+  label?: string | number;
   payload?: Array<{ name: string; value: number; color: string }>;
+  chartData?: ChartDatum[];
 }) {
   if (!active || !payload || payload.length === 0) return null;
 
   const sorted = [...payload].sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
 
+  // If label is a timestamp (number), look up the quarter label from chartData
+  let displayLabel = String(label);
+  if (typeof label === 'number' && chartData) {
+    const datum = chartData.find(d => d.timestamp === label);
+    if (datum && datum.quarter) {
+      displayLabel = datum.quarter;
+    }
+  }
+
   return (
     <div className="rounded border border-gray-200 bg-white p-3 text-xs shadow-sm">
-      <p className="mb-2 font-medium text-[#2B2F36]">{label}</p>
+      <p className="mb-2 font-medium text-[#2B2F36]">{displayLabel}</p>
       <div className="space-y-1">
         {sorted.map((entry) => (
           <div key={entry.name} className="flex items-center justify-between gap-2">
@@ -269,7 +280,7 @@ function CRLineChartComponent({
             ticks={yAxisTicks}
             domain={isMobile && yAxisTicks ? [0, "dataMax"] : undefined}
           />
-          <Tooltip content={<TooltipContent />} />
+          <Tooltip content={<TooltipContent chartData={data} />} />
           {showLegend && (
             <Legend
               formatter={legendFormatter}

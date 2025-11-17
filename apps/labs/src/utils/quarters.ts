@@ -7,46 +7,52 @@ export function formatQuarterLabel(coverageEndDate: string | Date, reportType?: 
   const month = date.getUTCMonth(); // 0-indexed
   const year = date.getUTCFullYear();
   const day = date.getUTCDate();
+  const quarter = Math.floor(month / 3) + 1;
 
-  // Check if this is a special filing type (non-quarterly)
-  // Special filings should plot as unique datapoints between quarters
-  const specialFilingTypes = [
-    'PRE-PRIMARY', '12P', '30P',
-    'PRE-GENERAL', '12G', '30G',
-    'PRE-RUN-OFF', '12R', '30R',
-    'POST-RUN-OFF', 'POST-GENERAL', 'POST-ELECTION',
-    'POST-SPECIAL'
-  ];
-
-  const isSpecialFiling = reportType && specialFilingTypes.some(
-    type => reportType.toUpperCase().includes(type.replace('-', ''))
-  );
-
-  if (isSpecialFiling) {
-    // For special filings, create a unique label with the actual date
-    // Format: "Q3 2025" becomes "Q3 2025.10.19" for a filing ending Oct 19
-    // This allows chronological sorting while keeping quarter context
-    const quarter = Math.floor(month / 3) + 1;
-    // Pad month and day to ensure proper sorting
-    const monthPadded = String(month + 1).padStart(2, '0');
-    const dayPadded = String(day).padStart(2, '0');
-    return `Q${quarter} ${year}.${monthPadded}.${dayPadded}`;
+  // If no report type, default to standard quarter
+  if (!reportType) {
+    return `Q${quarter} ${year}`;
   }
 
-  // Standard quarterly filings use simple quarter labels
-  const quarter = Math.floor(month / 3) + 1;
-  return `Q${quarter} ${year}`;
+  const reportTypeUpper = reportType.toUpperCase();
+
+  // Check if this is a standard quarterly report
+  const isQuarterly =
+    reportTypeUpper.includes('QUARTERLY') ||
+    reportTypeUpper === 'Q1' ||
+    reportTypeUpper === 'Q2' ||
+    reportTypeUpper === 'Q3' ||
+    reportTypeUpper === 'Q4';
+
+  if (isQuarterly) {
+    return `Q${quarter} ${year}`;
+  }
+
+  // For special filings, use the report type name with date for sorting
+  // Format: "PRE-GENERAL Q4 2022.10.19" - readable name with sortable date
+  const monthPadded = String(month + 1).padStart(2, '0');
+  const dayPadded = String(day).padStart(2, '0');
+
+  // Shorten common report type names for display
+  let displayName = reportType;
+  if (reportTypeUpper.includes('PRE-')) displayName = reportType;
+  else if (reportTypeUpper.includes('POST-')) displayName = reportType;
+  else if (reportTypeUpper === 'YEAR-END') displayName = 'Year-End';
+
+  return `${displayName} Q${quarter} ${year}.${monthPadded}.${dayPadded}`;
 }
 
 export function sortQuarterLabels(a: string, b: string) {
-  // Match standard quarters: "Q1 2022" or special filings: "Q4 2022.10.19"
-  const matchA = a.match(/^Q([1-4])\s+(\d{4})(?:\.(\d{2})\.(\d{2}))?$/i);
-  const matchB = b.match(/^Q([1-4])\s+(\d{4})(?:\.(\d{2})\.(\d{2}))?$/i);
+  // Match standard quarters: "Q1 2022"
+  // Or special filings: "PRE-GENERAL Q4 2022.10.19", "Year-End Q4 2022.12.31"
+  // Extract: Q#, year, optional month, optional day
+  const matchA = a.match(/Q([1-4])\s+(\d{4})(?:\.(\d{2})\.(\d{2}))?/i);
+  const matchB = b.match(/Q([1-4])\s+(\d{4})(?:\.(\d{2})\.(\d{2}))?/i);
 
   if (!matchA || !matchB) return a.localeCompare(b);
 
-  const [, qa, ya, ma = '99', da = '99'] = matchA; // Default to end of period if no date
-  const [, qb, yb, mb = '99', db = '99'] = matchB;
+  const [, qa, ya, ma = '00', da = '00'] = matchA; // Default to start of period if no date
+  const [, qb, yb, mb = '00', db = '00'] = matchB;
 
   // First compare years
   if (ya !== yb) {

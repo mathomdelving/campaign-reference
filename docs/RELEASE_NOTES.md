@@ -8,6 +8,16 @@
 - Updated Supabase/Google OAuth redirect URLs and Vercel environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_LABS_BASE_URL`).
 - Deferred the experimental Playwright/OG share routes until the post-launch cycle (removed from the production build to keep deployments stable).
 
+### Chart Improvements (November 2025)
+
+**Numeric X-Axis for Quarterly Trends**
+- Implemented time-based X-axis using Unix timestamps instead of categorical axis
+- Quarterly ticks now evenly spaced regardless of filing count per quarter
+- All filing types (Q1-Q4, PRE-PRIMARY, PRE-GENERAL, POST-RUNOFF, etc.) plotted as separate datapoints at their actual coverage end dates
+- Chronological ordering ensures special filings appear between quarters based on actual filing dates (e.g., PRE-PRIMARY for May 17 primary appears between Q1 and Q2, before PRE-PRIMARY for May 24 primary)
+- Tooltips display filing labels instead of raw timestamps
+- Handles dynamic special filing dates that vary by state (e.g., PRE-PRIMARY varies based on state primary dates)
+
 ## v1.0.0 – Vite UI (archived)
 
 - Initial public release of the Campaign Reference dashboard built with Vite/React (`frontend` workspace).

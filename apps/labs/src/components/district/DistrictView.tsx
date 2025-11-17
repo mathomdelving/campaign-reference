@@ -114,19 +114,41 @@ export function DistrictView() {
     for (const record of quarterlyData) {
       if (!activeCandidateIds.includes(record.candidateId)) continue;
       if (!record.quarterLabel) continue;
-      if (!record.coverageEnd) continue;
+
+      // Derive coverageEnd from quarterLabel if missing (for special filings)
+      let coverageEnd = record.coverageEnd;
+      if (!coverageEnd && record.quarterLabel) {
+        // Extract date from quarterLabel like "PRE-GENERAL Q4 2022.10.19"
+        const dateMatch = record.quarterLabel.match(/(\d{4})\.(\d{2})\.(\d{2})/);
+        if (dateMatch) {
+          const [, year, month, day] = dateMatch;
+          coverageEnd = `${year}-${month}-${day}`;
+        } else {
+          // Fall back to quarter end date
+          const quarterMatch = record.quarterLabel.match(/Q([1-4])\s+(\d{4})/);
+          if (quarterMatch) {
+            const quarter = parseInt(quarterMatch[1]);
+            const year = parseInt(quarterMatch[2]);
+            const month = quarter * 3;
+            const lastDay = new Date(year, month, 0).getDate();
+            coverageEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+          }
+        }
+      }
+
+      if (!coverageEnd) continue; // Skip if we still can't determine date
 
       // Use quarterLabel + coverageEnd to ensure uniqueness for multiple filings in same quarter
-      const key = `${record.quarterLabel}-${record.coverageEnd}`;
+      const key = `${record.quarterLabel}-${coverageEnd}`;
       if (!seriesMap.has(key)) {
         // Convert coverageEnd to timestamp for numeric X-axis
-        const timestamp = new Date(record.coverageEnd).getTime();
+        const timestamp = new Date(coverageEnd).getTime();
 
         seriesMap.set(key, {
           quarter: getDisplayLabel(record.quarterLabel),  // Clean label for tooltip
           sortKey: record.quarterLabel,  // Full label for sorting
           timestamp,  // Timestamp for X-axis positioning
-          coverageEnd: record.coverageEnd  // Keep for reference
+          coverageEnd: coverageEnd  // Keep for reference
         });
       }
 

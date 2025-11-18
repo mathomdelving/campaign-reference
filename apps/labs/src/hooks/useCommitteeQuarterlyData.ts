@@ -28,6 +28,7 @@ export interface CommitteeQuarterlyRecord {
   disbursements: number;
   cashEnding: number;
   coverageEnd: string | null;
+  reportType?: string | null;
 }
 
 interface CommitteeQuarterlyResult {
@@ -90,10 +91,38 @@ export function useCommitteeQuarterlyData(
             disbursements: row.total_disbursements ?? 0,
             cashEnding: row.cash_ending ?? 0,
             coverageEnd: row.coverage_end_date ?? null,
+            reportType: row.report_type,
           })) ?? [];
 
+        // Deduplicate reports: FEC provides duplicates with different report_type names
+        // for the same filing (e.g., "12G" and "PRE-GENERAL" are the same report).
+        // Keep descriptive names (PRE-GENERAL, POST-GENERAL) over short codes (12G, 30G).
+        const deduplicated: CommitteeQuarterlyRecord[] = [];
+        const seenKeys = new Map<string, CommitteeQuarterlyRecord>();
+
+        for (const record of processed) {
+          const key = `${record.committeeId}-${record.coverageEnd}`;
+          const existing = seenKeys.get(key);
+
+          if (!existing) {
+            seenKeys.set(key, record);
+          } else {
+            // Prefer descriptive names over short codes
+            const isCurrentDescriptive = record.reportType?.includes('-') ?? false;
+            const isExistingDescriptive = existing.reportType?.includes('-') ?? false;
+
+            if (isCurrentDescriptive && !isExistingDescriptive) {
+              // Replace with descriptive name
+              seenKeys.set(key, record);
+            }
+            // Otherwise keep existing
+          }
+        }
+
+        deduplicated.push(...seenKeys.values());
+
         if (!cancelled) {
-          setData(processed);
+          setData(deduplicated);
         }
       } catch (err) {
         if (!cancelled) {

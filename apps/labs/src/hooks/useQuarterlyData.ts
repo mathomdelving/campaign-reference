@@ -110,7 +110,34 @@ export function useQuarterlyData(
               : row.report_type ?? "Unknown",
           })) ?? [];
 
-        setData(processed);
+        // Deduplicate reports: FEC provides duplicates with different report_type names
+        // for the same filing (e.g., "12G" and "PRE-GENERAL" are the same report).
+        // Keep descriptive names (PRE-GENERAL, POST-GENERAL) over short codes (12G, 30G).
+        const deduplicated: QuarterlyRecord[] = [];
+        const seenKeys = new Map<string, QuarterlyRecord>();
+
+        for (const record of processed) {
+          const key = `${record.candidateId}-${record.coverageEnd}`;
+          const existing = seenKeys.get(key);
+
+          if (!existing) {
+            seenKeys.set(key, record);
+          } else {
+            // Prefer descriptive names over short codes
+            const isCurrentDescriptive = record.reportType?.includes('-') ?? false;
+            const isExistingDescriptive = existing.reportType?.includes('-') ?? false;
+
+            if (isCurrentDescriptive && !isExistingDescriptive) {
+              // Replace with descriptive name
+              seenKeys.set(key, record);
+            }
+            // Otherwise keep existing
+          }
+        }
+
+        deduplicated.push(...seenKeys.values());
+
+        setData(deduplicated);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Unable to load quarterly data.";

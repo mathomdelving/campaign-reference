@@ -178,16 +178,31 @@ export function usePersonQuarterlyData(
         // Step 5: Deduplicate records by committee + coverage date
         // When the same committee is used across multiple candidate IDs (e.g., House → Senate),
         // the same quarterly reports can appear multiple times. Keep only unique data points.
+        // Also deduplicate report type duplicates: FEC provides both "12G" and "PRE-GENERAL" for
+        // the same filing. Prefer descriptive names (PRE-GENERAL) over short codes (12G).
         const deduplicated: PersonQuarterlyRecord[] = [];
-        const seen = new Set<string>();
+        const seenMap = new Map<string, PersonQuarterlyRecord>();
 
         for (const record of processed) {
           const key = `${record.committeeId}-${record.coverageEnd}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            deduplicated.push(record);
+          const existing = seenMap.get(key);
+
+          if (!existing) {
+            seenMap.set(key, record);
+          } else {
+            // Prefer descriptive names over short codes
+            const isCurrentDescriptive = record.reportType?.includes('-') ?? false;
+            const isExistingDescriptive = existing.reportType?.includes('-') ?? false;
+
+            if (isCurrentDescriptive && !isExistingDescriptive) {
+              // Replace with descriptive name
+              seenMap.set(key, record);
+            }
+            // Otherwise keep existing
           }
         }
+
+        deduplicated.push(...seenMap.values());
 
         setData(deduplicated);
       } catch (err) {

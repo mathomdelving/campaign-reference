@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import type { PostgrestError } from "@supabase/supabase-js";
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabaseClient";
+import { useFollows } from "@/contexts/FollowsContext";
 
 type FollowButtonSize = "sm" | "md" | "lg";
 
@@ -37,37 +36,11 @@ export function FollowButton({
   onFollowChange,
 }: FollowButtonProps) {
   const { user } = useAuth();
-  const [isFollowing, setIsFollowing] = useState(false);
+  const { isFollowing: checkIsFollowing, addFollow, removeFollow } = useFollows();
   const [loading, setLoading] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
-  useEffect(() => {
-    if (!user || !candidateId) {
-      setIsFollowing(false);
-      return;
-    }
-
-    const checkFollowStatus = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("user_candidate_follows")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("candidate_id", candidateId)
-          .maybeSingle();
-
-        if (error && (error as PostgrestError).code !== "PGRST116") {
-          throw error;
-        }
-
-        setIsFollowing(Boolean(data));
-      } catch (err) {
-        console.error("Error checking follow status:", err);
-      }
-    };
-
-    checkFollowStatus();
-  }, [user, candidateId]);
+  const isFollowing = checkIsFollowing(candidateId);
 
   const handleFollowToggle = async () => {
     if (!user) {
@@ -80,51 +53,22 @@ export function FollowButton({
 
     try {
       if (isFollowing) {
-        const { error } = await supabase
-          .from("user_candidate_follows")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("candidate_id", candidateId);
-
-        if (error) throw error;
-
-        setIsFollowing(false);
+        await removeFollow(candidateId);
         onFollowChange?.(candidateId, false);
       } else {
-        const { count, error: countError } = await supabase
-          .from("user_candidate_follows")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id);
-
-        if (countError) throw countError;
-
-        if (count !== null && count >= 50) {
-          alert(
-            "You have reached the maximum of 50 followed candidates. Please unfollow some candidates before adding more."
-          );
-          setLoading(false);
-          return;
-        }
-
-        const { error } = await supabase.from("user_candidate_follows").insert({
-          user_id: user.id,
-          candidate_id: candidateId,
-          candidate_name: candidateName,
+        await addFollow(candidateId, {
+          candidateName,
           party,
           office,
           state,
           district,
-          notification_enabled: true,
         });
-
-        if (error) throw error;
-
-        setIsFollowing(true);
         onFollowChange?.(candidateId, true);
       }
     } catch (err) {
       console.error("Error updating follow status:", err);
-      alert("Failed to update follow status. Please try again.");
+      const message = err instanceof Error ? err.message : "Failed to update follow status. Please try again.";
+      alert(message);
     } finally {
       setLoading(false);
     }

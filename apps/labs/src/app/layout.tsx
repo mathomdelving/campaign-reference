@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Libre_Baskerville } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { FollowsProvider } from "@/contexts/FollowsContext";
 import "./globals.css";
 
 const inter = Inter({
@@ -57,7 +58,9 @@ export default function RootLayout({
         className={`${inter.variable} ${libreBaskerville.variable} bg-rb-canvas text-rb-axis antialiased`}
       >
         <AuthProvider>
-          {children}
+          <FollowsProvider>
+            {children}
+          </FollowsProvider>
         </AuthProvider>
       </body>
     </html>

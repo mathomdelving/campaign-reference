@@ -100,22 +100,22 @@ export function useCandidateData(filters: LeaderboardFilters): CandidateDataResu
           updatedAt: row.updated_at,
         }));
 
-        // Deduplicate candidates with same name (House-to-Senate switchers)
-        // Prioritize Senate over House
+        // Deduplicate candidates with same name
+        // When chamber filter is "both", use name + office as key to keep both House and Senate
+        // When chamber is specific (H or S), deduplicate by name only
+        const useOfficeInKey = filters.chamber === "both";
         const deduplicatedByName = new Map<string, LeaderboardCandidate>();
+
         processed.forEach((candidate) => {
-          const key = candidate.name.toUpperCase().trim();
+          const nameKey = candidate.name.toUpperCase().trim();
+          const key = useOfficeInKey ? `${nameKey}-${candidate.office}` : nameKey;
           const existing = deduplicatedByName.get(key);
 
           if (!existing) {
             deduplicatedByName.set(key, candidate);
           } else {
-            // If duplicate found, prefer Senate over House
-            if (candidate.office === 'S' && existing.office === 'H') {
-              deduplicatedByName.set(key, candidate);
-            }
-            // If both are same office, keep the one with higher receipts
-            else if (candidate.office === existing.office && candidate.totalReceipts > existing.totalReceipts) {
+            // Keep the one with higher receipts (handles amendments/duplicates for same office)
+            if (candidate.totalReceipts > existing.totalReceipts) {
               deduplicatedByName.set(key, candidate);
             }
           }

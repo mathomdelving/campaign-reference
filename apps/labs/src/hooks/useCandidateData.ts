@@ -82,6 +82,10 @@ export function useCandidateData(filters: LeaderboardFilters): CandidateDataResu
           }
         }
 
+        // IMPORTANT: Sort by total_receipts at the database level BEFORE Supabase applies its default 1000-row limit
+        // This ensures we get the top fundraisers, not just the first 1000 arbitrary records
+        query = query.order("total_receipts", { ascending: false }).limit(5000);
+
         const { data: results, error: queryError } = await query;
 
         if (queryError) throw queryError;

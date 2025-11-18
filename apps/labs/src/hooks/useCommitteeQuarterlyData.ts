@@ -22,6 +22,7 @@ const browserClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 export interface CommitteeQuarterlyRecord {
   committeeId: string;
   committeeName: string | null;
+  party: string | null;
   quarterLabel: string;
   receipts: number;
   disbursements: number;
@@ -69,7 +70,7 @@ export function useCommitteeQuarterlyData(
         const { data: results, error: queryError } = await browserClient
           .from("quarterly_financials")
           .select(
-            "committee_id, committee_name, total_receipts, total_disbursements, cash_ending, coverage_end_date, report_type"
+            "committee_id, committee_name, party, total_receipts, total_disbursements, cash_ending, coverage_end_date, report_type"
           )
           .in("cycle", cyclesArray)
           .in("committee_id", committeeIds)
@@ -81,6 +82,7 @@ export function useCommitteeQuarterlyData(
           results?.map((row) => ({
             committeeId: row.committee_id,
             committeeName: row.committee_name,
+            party: row.party,
             quarterLabel: row.coverage_end_date
               ? formatQuarterLabel(row.coverage_end_date, row.report_type)
               : row.report_type ?? "Unknown",

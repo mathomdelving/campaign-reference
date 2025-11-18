@@ -22,6 +22,7 @@ const browserClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 export interface QuarterlyRecord {
   candidateId: string;
   candidateName: string;
+  committeeId: string | null;
   party: string | null;
   state: string | null;
   district: string | null;
@@ -93,6 +94,7 @@ export function useQuarterlyData(
           results?.map((row) => ({
             candidateId: row.candidate_id,
             candidateName: row.name,
+            committeeId: row.committee_id,
             party: row.party,
             state: row.state,
             district: row.district,

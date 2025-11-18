@@ -24,7 +24,7 @@ export interface ChartSeriesConfig {
 export interface ChartDatum {
   quarter: string;
   timestamp: number;  // Unix timestamp for X-axis positioning
-  [key: string]: string | number;
+  [key: string]: string | number | Record<string, any>;
 }
 
 export interface QuarterlyTick {
@@ -75,16 +75,26 @@ function properCase(value: string): string {
     .join("");
 }
 
+function getPartyBadgeColor(party: string | null | undefined): string {
+  if (!party) return "#6B7280"; // gray-500
+  const normalized = party.toUpperCase();
+  if (normalized === "DEM") return "#3B82F6"; // blue-500
+  if (normalized === "REP" || normalized === "GOP") return "#EF4444"; // red-500
+  return "#6B7280"; // gray-500 for independents/others
+}
+
 function TooltipContent({
   active,
   label,
   payload,
   chartData,
+  seriesConfig,
 }: {
   active?: boolean;
   label?: string | number;
   payload?: Array<{ name: string; value: number; color: string }>;
   chartData?: ChartDatum[];
+  seriesConfig?: ChartSeriesConfig[];
 }) {
   if (!active || !payload || payload.length === 0) return null;
 
@@ -99,20 +109,61 @@ function TooltipContent({
     }
   }
 
+  // Look up the current datum to get per-datapoint metadata
+  const currentDatum = typeof label === 'number' && chartData
+    ? chartData.find(d => d.timestamp === label)
+    : null;
+
+  // Create a map from series label to series key for metadata lookup
+  const labelToKeyMap = new Map<string, string>();
+  seriesConfig?.forEach(config => {
+    labelToKeyMap.set(config.label, config.key);
+  });
+
   return (
     <div className="rounded border border-gray-200 bg-white p-3 text-xs shadow-sm">
       <p className="mb-2 font-medium text-[#2B2F36]">{displayLabel}</p>
-      <div className="space-y-1">
-        {sorted.map((entry) => (
-          <div key={entry.name} className="flex items-center justify-between gap-2">
-            <span className="font-semibold" style={{ color: entry.color }}>
-              {entry.name}
-            </span>
-            <span className="font-mono text-[#2B2F36]">
-              {formatCompactCurrency(entry.value)}
-            </span>
-          </div>
-        ))}
+      <div className="space-y-2">
+        {sorted.map((entry) => {
+          // Look up metadata for this specific data point
+          const seriesKey = labelToKeyMap.get(entry.name);
+          const metadataKey = seriesKey ? `${seriesKey}_meta` : null;
+          const metadata = (metadataKey && currentDatum && currentDatum[metadataKey]) as
+            | { committeeId?: string | null; party?: string | null }
+            | undefined;
+
+          return (
+            <div key={entry.name} className="space-y-0.5">
+              <div className="font-semibold" style={{ color: entry.color }}>
+                {entry.name}
+              </div>
+              {(metadata?.committeeId || metadata?.party) && (
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-600">
+                  {metadata.committeeId && (
+                    <span className="font-mono">{metadata.committeeId}</span>
+                  )}
+                  {metadata.committeeId && metadata.party && (
+                    <span>•</span>
+                  )}
+                  {metadata.party && (
+                    <span
+                      className="px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide"
+                      style={{
+                        backgroundColor: getPartyBadgeColor(metadata.party) + '20',
+                        color: getPartyBadgeColor(metadata.party)
+                      }}
+                    >
+                      {metadata.party}
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className="font-mono text-[#2B2F36] font-semibold">
+                {formatCompactCurrency(entry.value)}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -280,7 +331,7 @@ function CRLineChartComponent({
             ticks={yAxisTicks}
             domain={isMobile && yAxisTicks ? [0, "dataMax"] : undefined}
           />
-          <Tooltip content={<TooltipContent chartData={data} />} />
+          <Tooltip content={<TooltipContent chartData={data} seriesConfig={activeSeries} />} />
           {showLegend && (
             <Legend
               formatter={legendFormatter}

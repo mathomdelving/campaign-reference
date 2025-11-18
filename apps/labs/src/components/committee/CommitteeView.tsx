@@ -6,6 +6,7 @@ import { CRLineChart } from "@/components/CRLineChart";
 import type { ChartDatum, ChartSeriesConfig } from "@/components/CRLineChart";
 import { useQuarterlyData } from "@/hooks/useQuarterlyData";
 import { useCommitteeQuarterlyData } from "@/hooks/useCommitteeQuarterlyData";
+import { usePersonQuarterlyData } from "@/hooks/usePersonQuarterlyData";
 import { getPartyColor, formatCurrency } from "@/utils/formatters";
 import { FollowButton } from "@/components/follow/FollowButton";
 import { sortQuarterLabels, getDisplayLabel } from "@/utils/quarters";
@@ -146,7 +147,7 @@ const METRIC_OPTIONS = [
 
 type MetricValue = typeof METRIC_OPTIONS[number]["value"];
 
-type EntityType = "candidate" | "committee";
+type EntityType = "person" | "candidate" | "committee";
 
 type EntitySelection = {
   type: EntityType;
@@ -178,6 +179,10 @@ export function CommitteeView() {
   const [endQuarter, setEndQuarter] = useState<string>("present");
   const cycle = 2026;
 
+  const personIds = useMemo(
+    () => selectedEntities.filter((entity) => entity.type === "person").map((entity) => entity.id),
+    [selectedEntities]
+  );
   const candidateIds = useMemo(
     () => selectedEntities.filter((entity) => entity.type === "candidate").map((entity) => entity.id),
     [selectedEntities]
@@ -187,12 +192,67 @@ export function CommitteeView() {
     [selectedEntities]
   );
 
+  const { data: personQuarterlies } = usePersonQuarterlyData(personIds, [2022, 2024, 2026]);
   const { data: candidateQuarterlies } = useQuarterlyData(candidateIds, [2022, 2024, 2026]);
   const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, [2022, 2024, 2026]);
 
   // chartDataWithKeys keeps sortKey for filtering, chartData is the clean output
   const { chartDataWithKeys, chartData, quarterlyTicks } = useMemo(() => {
     const map = new Map<string, ChartDatum & { sortKey: string; quarterKey: string; timestamp: number; coverageEnd: string }>();
+
+    // Process person quarterly data
+    for (const record of personQuarterlies) {
+      if (!record.quarterLabel || !personIds.includes(record.personId)) continue;
+
+      // Derive coverageEnd from quarterLabel if missing (for special filings)
+      let coverageEnd = record.coverageEnd;
+      if (!coverageEnd && record.quarterLabel) {
+        const dateMatch = record.quarterLabel.match(/(\d{4})\.(\d{2})\.(\d{2})/);
+        if (dateMatch) {
+          const [, year, month, day] = dateMatch;
+          coverageEnd = `${year}-${month}-${day}`;
+        } else {
+          const quarterMatch = record.quarterLabel.match(/Q([1-4])\s+(\d{4})/);
+          if (quarterMatch) {
+            const quarter = parseInt(quarterMatch[1]);
+            const year = parseInt(quarterMatch[2]);
+            const month = quarter * 3;
+            const lastDay = new Date(year, month, 0).getDate();
+            coverageEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+          }
+        }
+      }
+
+      if (!coverageEnd) continue;
+
+      const key = `${record.quarterLabel}-${coverageEnd}`;
+      if (!map.has(key)) {
+        const match = record.quarterLabel.match(/Q([1-4])\s+(\d{4})/);
+        const quarterKey = match ? `Q${match[1]} ${match[2]}` : record.quarterLabel;
+        const timestamp = new Date(coverageEnd).getTime();
+
+        map.set(key, {
+          quarter: getDisplayLabel(record.quarterLabel),
+          sortKey: record.quarterLabel,
+          quarterKey,
+          timestamp,
+          coverageEnd: coverageEnd
+        });
+      }
+      const datum = map.get(key)!;
+      datum[record.personId] =
+        metric === "receipts"
+          ? record.receipts
+          : metric === "disbursements"
+          ? record.disbursements
+          : record.cashEnding;
+
+      // Store metadata for this data point
+      datum[`${record.personId}_meta`] = {
+        committeeId: record.committeeId,
+        party: record.party
+      };
+    }
 
     for (const record of candidateQuarterlies) {
       if (!record.quarterLabel || !candidateIds.includes(record.candidateId)) continue;
@@ -245,6 +305,12 @@ export function CommitteeView() {
           : metric === "disbursements"
           ? record.disbursements
           : record.cashEnding;
+
+      // Store metadata for this data point
+      datum[`${record.candidateId}_meta`] = {
+        committeeId: record.committeeId,
+        party: record.party
+      };
     }
 
     for (const record of committeeQuarterlies) {
@@ -296,13 +362,19 @@ export function CommitteeView() {
           : metric === "disbursements"
           ? record.disbursements
           : record.cashEnding;
+
+      // Store metadata for this data point (committee ID is the entity ID itself)
+      datum[`${record.committeeId}_meta`] = {
+        committeeId: record.committeeId,
+        party: record.party
+      };
     }
 
     // Sort chronologically by timestamp
     const sorted = Array.from(map.values()).sort((a, b) => a.timestamp - b.timestamp);
 
     // Trim leading empty quarters - find first quarter with any non-zero data
-    const allEntityIds = [...candidateIds, ...committeeIds];
+    const allEntityIds = [...personIds, ...candidateIds, ...committeeIds];
     let firstNonEmptyIndex = 0;
     for (let i = 0; i < sorted.length; i++) {
       const quarter = sorted[i];
@@ -357,11 +429,22 @@ export function CommitteeView() {
       chartData: trimmed.map(({ sortKey, quarterKey, coverageEnd, ...datum }) => datum),
       quarterlyTicks: displayTicks
     };
-  }, [candidateQuarterlies, committeeQuarterlies, metric, candidateIds, committeeIds]);
+  }, [personQuarterlies, candidateQuarterlies, committeeQuarterlies, metric, personIds, candidateIds, committeeIds]);
 
   // Extract unique quarters from chartData for date range selector
   const availableQuarters = useMemo(() => {
     const map = new Map<string, { sortKey: string }>();
+
+    for (const record of personQuarterlies) {
+      if (!record.quarterLabel) continue;
+      const match = record.quarterLabel.match(/Q([1-4])\s+(\d{4})/);
+      if (match) {
+        const quarterKey = `Q${match[1]} ${match[2]}`;
+        if (!map.has(quarterKey)) {
+          map.set(quarterKey, { sortKey: record.quarterLabel });
+        }
+      }
+    }
 
     for (const record of candidateQuarterlies) {
       if (!record.quarterLabel) continue;
@@ -399,7 +482,7 @@ export function CommitteeView() {
       }
       return { value: quarterKey, label: quarterKey };
     });
-  }, [candidateQuarterlies, committeeQuarterlies]);
+  }, [personQuarterlies, candidateQuarterlies, committeeQuarterlies]);
 
   // Filter chartData based on selected date range
   const { filteredChartData, filteredQuarterlyTicks } = useMemo(() => {
@@ -461,6 +544,25 @@ export function CommitteeView() {
       { id: string; label: string; type: EntityType; party?: string | null; value: number; coverage?: string | null }
     >();
 
+    personIds.forEach((personId) => {
+      const entity = selectedEntities.find((item) => item.id === personId && item.type === "person");
+      if (!entity) return;
+      const records = personQuarterlies.filter((row) => row.personId === personId);
+      if (records.length === 0) return;
+      const latest = records.reduce((acc, current) =>
+        !acc.coverageEnd || (current.coverageEnd && current.coverageEnd > acc.coverageEnd) ? current : acc
+      );
+      const value = metric === "receipts" ? latest.receipts : metric === "disbursements" ? latest.disbursements : latest.cashEnding;
+      latestById.set(personId, {
+        id: personId,
+        label: entity.label,
+        type: "person",
+        party: entity.party ?? null,
+        value,
+        coverage: latest.coverageEnd,
+      });
+    });
+
     candidateIds.forEach((candidateId) => {
       const entity = selectedEntities.find((item) => item.id === candidateId && item.type === "candidate");
       if (!entity) return;
@@ -499,7 +601,7 @@ export function CommitteeView() {
     });
 
     return Array.from(latestById.values());
-  }, [selectedEntities, metric, candidateQuarterlies, committeeQuarterlies, candidateIds, committeeIds]);
+  }, [selectedEntities, metric, personQuarterlies, candidateQuarterlies, committeeQuarterlies, personIds, candidateIds, committeeIds]);
 
   useEffect(() => {
     // Require minimum 3 characters for search
@@ -512,6 +614,40 @@ export function CommitteeView() {
     (async () => {
       try {
         const trimmed = searchTerm.trim();
+
+        // Search political_persons first (prioritized)
+        const { data: persons, error: personsError } = await browserClient
+          .from("political_persons")
+          .select("person_id, display_name, party")
+          .ilike("display_name", `%${trimmed}%`)
+          .limit(8);
+
+        if (personsError) {
+          console.error('[Committee Search] Persons query error:', personsError);
+        }
+
+        const personResults: EntityResult[] =
+          persons?.map((row) => ({
+            type: "person" as const,
+            id: row.person_id,
+            label: row.display_name,
+            party: row.party,
+            subtitle: row.party ?? "Person",
+          })) ?? [];
+
+        // If we have enough person results, just return those
+        if (personResults.length >= 5) {
+          if (!cancelled) {
+            const committeeMatches = QUICK_COMMITTEES.filter((entity) =>
+              entity.label.toLowerCase().includes(searchTerm.toLowerCase())
+            ).map((entity) => ({ ...entity, subtitle: "Committee" }));
+            const combined = [...committeeMatches, ...personResults];
+            setSearchResults(combined.slice(0, 8));
+          }
+          return;
+        }
+
+        // Otherwise, also search individual candidates for completeness
         let data = null;
         let error = null;
 
@@ -640,7 +776,7 @@ export function CommitteeView() {
             id: row.candidate_id,
             label: formatCandidateName(row.name),
             party: row.party,
-            subtitle: row.party ?? undefined,
+            subtitle: row.party ?? "Candidate",
           })) ?? [];
 
         const committeeMatches = QUICK_COMMITTEES.filter((entity) =>
@@ -648,8 +784,8 @@ export function CommitteeView() {
         ).map((entity) => ({ ...entity, subtitle: "Committee" }));
 
         if (!cancelled) {
-          // Combine and limit to 8 total results
-          const combined = [...committeeMatches, ...candidateResults];
+          // Combine: persons first, then committees, then candidates
+          const combined = [...personResults, ...committeeMatches, ...candidateResults];
           setSearchResults(combined.slice(0, 8));
         }
       } catch (error) {
@@ -856,7 +992,7 @@ export function CommitteeView() {
                   <div className="text-xs uppercase tracking-[0.15rem] sm:tracking-[0.3rem] text-gray-600">
                     {summary.label}
                   </div>
-                  {summary.type === "candidate" && (
+                  {(summary.type === "candidate" || summary.type === "person") && (
                     <FollowButton
                       candidateId={summary.id}
                       candidateName={summary.label}

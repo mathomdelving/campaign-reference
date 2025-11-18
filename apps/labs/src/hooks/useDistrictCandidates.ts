@@ -19,26 +19,6 @@ const browserClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
-// Helper function to format names from "LAST, FIRST" to "First Last"
-function formatCandidateName(name: string): string {
-  if (!name) return name;
-
-  // Check if name is in "LAST, FIRST" format
-  if (name.includes(',')) {
-    const [last, first] = name.split(',').map(s => s.trim());
-
-    // Convert to title case
-    const titleCase = (str: string) => {
-      return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
-    };
-
-    return `${titleCase(first)} ${titleCase(last)}`;
-  }
-
-  // If no comma, just apply title case
-  return name.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
-}
-
 export interface DistrictCandidate {
   candidate_id: string;
   name: string;
@@ -87,33 +67,19 @@ export function useDistrictCandidates({
     let cancelled = false;
 
     async function fetchCandidates() {
+      console.log('🚀 [useDistrictCandidates] Using leaderboard_data view - FAST VERSION');
       setLoading(true);
       setError(null);
 
       try {
+        // Build query using the pre-joined view
         let query = browserClient
-          .from("candidates")
-          .select(
-            `
-            candidate_id,
-            name,
-            party,
-            state,
-            district,
-            office,
-            financial_summary!inner(
-              total_receipts,
-              total_disbursements,
-              cash_on_hand,
-              updated_at
-            )
-          `
-          )
+          .from("leaderboard_data")
+          .select("*")
+          .eq("cycle", cycle)
           .eq("state", state);
 
-        // Filter financial_summary by cycle using the correct syntax
-        query = query.filter("financial_summary.cycle", "eq", cycle);
-
+        // Apply chamber filter
         if (chamber === "H") {
           query = query.eq("office", "H");
           if (district !== "all") {
@@ -126,25 +92,21 @@ export function useDistrictCandidates({
         const { data: results, error: queryError } = await query;
         if (queryError) throw queryError;
 
-        let flattened =
-          results?.map((candidate) => ({
-            candidate_id: candidate.candidate_id,
-            name: formatCandidateName(candidate.name),
-            party: candidate.party,
-            state: candidate.state,
-            district: candidate.district,
-            office: candidate.office,
-            totalRaised:
-              candidate.financial_summary?.[0]?.total_receipts ?? 0,
-            totalDisbursed:
-              candidate.financial_summary?.[0]?.total_disbursements ?? 0,
-            cashOnHand:
-              candidate.financial_summary?.[0]?.cash_on_hand ?? 0,
-            updatedAt: candidate.financial_summary?.[0]?.updated_at ?? null,
-          })) ?? [];
+        // Map to DistrictCandidate format
+        let flattened = (results ?? []).map((row) => ({
+          candidate_id: row.candidate_id,
+          name: row.display_name, // Already clean from political_persons!
+          party: row.party,
+          state: row.state,
+          district: row.district,
+          office: row.office,
+          totalRaised: row.total_receipts ?? 0,
+          totalDisbursed: row.total_disbursements ?? 0,
+          cashOnHand: row.cash_on_hand ?? 0,
+          updatedAt: row.updated_at,
+        }));
 
         // For Senate candidates, the district column stores their class (I, II, or III)
-        // This was populated via scripts/populate_senate_class_manual.py
         if (chamber === "S" && district !== "all") {
           flattened = flattened.filter((candidate) =>
             candidate.district === district
@@ -172,15 +134,13 @@ export function useDistrictCandidates({
           }
         });
 
-        flattened = Array.from(deduplicatedByName.values());
-        flattened.sort(
-          (a, b) => (b.totalRaised ?? 0) - (a.totalRaised ?? 0)
-        );
+        const final = Array.from(deduplicatedByName.values());
+        final.sort((a, b) => (b.totalRaised ?? 0) - (a.totalRaised ?? 0));
 
         if (!cancelled) {
-          setData(flattened);
+          setData(final);
 
-          const mostRecent = flattened.reduce<string | null>((latest, current) => {
+          const mostRecent = final.reduce<string | null>((latest, current) => {
             if (!current.updatedAt) return latest;
             if (!latest) return current.updatedAt;
             return new Date(current.updatedAt) > new Date(latest)

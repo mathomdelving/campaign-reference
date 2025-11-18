@@ -682,14 +682,14 @@ export function CommitteeView() {
             // Query 1: Exact conversion "Last, First"
             const result1 = await browserClient
               .from("candidates")
-              .select("candidate_id, name, party")
+              .select("candidate_id, name, party, person_id")
               .ilike("name", `%${last}, ${firstVariation}%`)
               .limit(20);
 
             // Query 2: Prefix match - Last starts with last word, First contains first word
             const result2 = await browserClient
               .from("candidates")
-              .select("candidate_id, name, party")
+              .select("candidate_id, name, party, person_id")
               .ilike("name", `${last}%`)
               .ilike("name", `%, ${firstVariation}%`)
               .limit(20);
@@ -698,7 +698,7 @@ export function CommitteeView() {
             // This catches cases like "JOHNSON, JAMES MICHAEL" when searching "Mike Johnson"
             const result3 = await browserClient
               .from("candidates")
-              .select("candidate_id, name, party")
+              .select("candidate_id, name, party, person_id")
               .ilike("name", `${last}%`)
               .ilike("name", `%, %${firstVariation}%`)
               .limit(20);
@@ -734,14 +734,14 @@ export function CommitteeView() {
             // Query 1: Match start of last name
             const result1 = await browserClient
               .from("candidates")
-              .select("candidate_id, name, party")
+              .select("candidate_id, name, party, person_id")
               .ilike("name", `${variation}%`)
               .limit(20);
 
             // Query 2: Match start of first name (after ", ")
             const result2 = await browserClient
               .from("candidates")
-              .select("candidate_id, name, party")
+              .select("candidate_id, name, party, person_id")
               .ilike("name", `%, ${variation}%`)
               .limit(20);
 
@@ -770,13 +770,14 @@ export function CommitteeView() {
 
         console.log(`[Committee Search] Found ${data?.length || 0} candidates`);
 
-        const candidateResults: EntityResult[] =
+        const candidateResults: (EntityResult & { personId?: string | null })[] =
           data?.map((row) => ({
             type: "candidate" as const,
             id: row.candidate_id,
             label: formatCandidateName(row.name),
             party: row.party,
             subtitle: row.party ?? "Candidate",
+            personId: row.person_id, // Store person_id for deduplication
           })) ?? [];
 
         const committeeMatches = QUICK_COMMITTEES.filter((entity) =>
@@ -784,8 +785,23 @@ export function CommitteeView() {
         ).map((entity) => ({ ...entity, subtitle: "Committee" }));
 
         if (!cancelled) {
-          // Combine: persons first, then committees, then candidates
-          const combined = [...personResults, ...committeeMatches, ...candidateResults];
+          // Get set of person_ids that appeared in person results
+          // We'll use this to filter out duplicate candidates
+          const personIdsInResults = new Set(personResults.map(p => p.id));
+
+          // Filter out candidates that are already represented by a political_person
+          // This prevents duplicates like "John Fetterman" (person) + "FETTERMAN, JOHN" (candidate)
+          const uniqueCandidateResults = candidateResults.filter(candidate => {
+            // If this candidate has a person_id that matches a person in our results, skip it
+            if (candidate.personId && personIdsInResults.has(candidate.personId)) {
+              console.log(`[Committee Search] Filtering out duplicate: ${candidate.label} (person already in results)`);
+              return false;
+            }
+            return true;
+          });
+
+          // Combine: persons first, then committees, then unique candidates only
+          const combined = [...personResults, ...committeeMatches, ...uniqueCandidateResults];
           setSearchResults(combined.slice(0, 8));
         }
       } catch (error) {

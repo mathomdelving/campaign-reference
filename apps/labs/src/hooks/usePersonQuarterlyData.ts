@@ -175,7 +175,21 @@ export function usePersonQuarterlyData(
               return record !== null && record.isPrincipal;
             }) ?? [];
 
-        setData(processed);
+        // Step 5: Deduplicate records by committee + coverage date
+        // When the same committee is used across multiple candidate IDs (e.g., House → Senate),
+        // the same quarterly reports can appear multiple times. Keep only unique data points.
+        const deduplicated: PersonQuarterlyRecord[] = [];
+        const seen = new Set<string>();
+
+        for (const record of processed) {
+          const key = `${record.committeeId}-${record.coverageEnd}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            deduplicated.push(record);
+          }
+        }
+
+        setData(deduplicated);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Unable to load person quarterly data.";

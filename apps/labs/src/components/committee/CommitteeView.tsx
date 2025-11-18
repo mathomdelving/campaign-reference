@@ -772,8 +772,10 @@ export function CommitteeView() {
 
         const candidateResults: (EntityResult & { personId?: string | null })[] =
           data?.map((row) => ({
-            type: "candidate" as const,
-            id: row.candidate_id,
+            // If the candidate has a person_id, treat as "person" so data loads via usePersonQuarterlyData
+            // Otherwise treat as "candidate" and data loads via useQuarterlyData
+            type: (row.person_id ? "person" : "candidate") as const,
+            id: row.person_id || row.candidate_id, // Use person_id if available, otherwise candidate_id
             label: formatCandidateName(row.name),
             party: row.party,
             subtitle: row.party ?? "Candidate",

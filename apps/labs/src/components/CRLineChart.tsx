@@ -78,9 +78,17 @@ function properCase(value: string): string {
 function getPartyBadgeColor(party: string | null | undefined): string {
   if (!party) return "#6B7280"; // gray-500
   const normalized = party.toUpperCase();
-  if (normalized === "DEM") return "#3B82F6"; // blue-500
-  if (normalized === "REP" || normalized === "GOP") return "#EF4444"; // red-500
+  if (normalized === "DEM" || normalized === "DEMOCRAT") return "#3B82F6"; // blue-500
+  if (normalized === "REP" || normalized === "GOP" || normalized === "REPUBLICAN") return "#EF4444"; // red-500
   return "#6B7280"; // gray-500 for independents/others
+}
+
+function normalizePartyLabel(party: string | null | undefined): string {
+  if (!party) return "";
+  const normalized = party.toUpperCase();
+  if (normalized === "DEMOCRAT" || normalized === "DEM") return "DEM";
+  if (normalized === "REPUBLICAN" || normalized === "REP" || normalized === "GOP") return "GOP";
+  return party; // Return original for independents/others
 }
 
 function TooltipContent({
@@ -153,7 +161,7 @@ function TooltipContent({
                         color: getPartyBadgeColor(metadata.party)
                       }}
                     >
-                      {metadata.party}
+                      {normalizePartyLabel(metadata.party)}
                     </span>
                   )}
                 </div>

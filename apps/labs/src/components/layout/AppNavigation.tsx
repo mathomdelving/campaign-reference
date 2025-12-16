@@ -63,7 +63,19 @@ export function AppNavigation() {
             </svg>
           </button>
 
-          <AuthButton />
+          {/* Auth button with legal links below on desktop */}
+          <div className="flex flex-col items-end">
+            <AuthButton />
+            <div className="hidden md:flex gap-3 mt-1 text-[10px] text-rb-grey">
+              <Link href="/terms" className="hover:text-white transition-colors">
+                Terms
+              </Link>
+              <span className="text-rb-grey/50">·</span>
+              <Link href="/privacy" className="hover:text-white transition-colors">
+                Privacy
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -81,7 +93,7 @@ export function AppNavigation() {
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="flex flex-col p-6 space-y-6">
+        <div className="flex flex-col p-6 space-y-6 h-full">
           <div className="flex justify-end">
             <button
               onClick={() => setMobileMenuOpen(false)}
@@ -117,6 +129,26 @@ export function AppNavigation() {
               );
             })}
           </nav>
+
+          {/* Legal links at bottom of mobile menu */}
+          <div className="mt-auto pt-6 border-t border-rb-grey/20">
+            <div className="flex gap-4 px-4 text-xs text-rb-grey">
+              <Link
+                href="/terms"
+                onClick={() => setMobileMenuOpen(false)}
+                className="hover:text-white transition-colors"
+              >
+                Terms
+              </Link>
+              <Link
+                href="/privacy"
+                onClick={() => setMobileMenuOpen(false)}
+                className="hover:text-white transition-colors"
+              >
+                Privacy
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </header>

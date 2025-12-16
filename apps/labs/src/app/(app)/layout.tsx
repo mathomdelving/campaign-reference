@@ -17,6 +17,9 @@ export default function AppLayout({
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
             <p>&copy; {new Date().getFullYear()} Campaign Reference</p>
             <nav className="flex gap-6">
+              <Link href="/terms" className="hover:text-gray-700 transition-colors">
+                Terms of Service
+              </Link>
               <Link href="/privacy" className="hover:text-gray-700 transition-colors">
                 Privacy Policy
               </Link>

@@ -8,6 +8,24 @@
 - Updated Supabase/Google OAuth redirect URLs and Vercel environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_LABS_BASE_URL`).
 - Deferred the experimental Playwright/OG share routes until the post-launch cycle (removed from the production build to keep deployments stable).
 
+### Notification System (December 2025)
+
+**Filing Detection & Email Notifications**
+- Added `detect_new_filings.py` script that polls FEC `/filings/` endpoint every 30 seconds
+- Integrated SendGrid for email delivery with beautiful HTML email templates
+- Implemented `--test-all EMAIL` mode to catch early filers during testing period (Jan 5-11 before Jan 15 deadline)
+
+**Bug Fixes**
+- Fixed per-filing financial data: notifications now show amounts from that specific filing (using `quarterly_financials.cash_ending`) instead of cumulative cycle totals
+- Fixed office display consistency: properly handles `H`/`House`, `S`/`Senate`, `P`/`President` variations
+- Fixed district display: filters out `00`/`0`/`` placeholder values for Senate races
+- Added `resolve_candidate_from_committee()` to enrich filings when FEC API returns null `candidate_id`
+- Changed form type filter from `['F3', 'F3P', 'F3X']` to `['F3', 'F3P']` (candidate committees only, excludes PACs)
+
+**Documentation**
+- Updated `scripts/maintenance/README_NOTIFICATIONS.md` with comprehensive usage guide
+- Added test-all mode documentation for early filer detection
+
 ### Chart Improvements (November 2025)
 
 **Numeric X-Axis for Quarterly Trends**

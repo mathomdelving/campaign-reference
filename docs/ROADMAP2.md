@@ -3100,8 +3100,34 @@ font-family: 'Inter', system-ui, -apple-system, sans-serif;
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** October 28, 2025
+## Future Features (Backlog)
+
+Features identified for future development, not currently scheduled.
+
+### Candidate Registration Detection (Form 2 Monitoring)
+
+**Problem:** "Hotshot" candidates announce their campaigns well before their first financial filing. Users may want to watch these candidates, but they won't appear in our database until we run collection scripts.
+
+**Proposed Solution:**
+- Add Form 2 (Statement of Candidacy) detection to our monitoring system
+- When FEC receives a new candidate registration, automatically add them to our `candidates` table
+- This allows users to "Watch" candidates before their first financial filing
+
+**Implementation Options:**
+1. **Form 2 Detection:** Add `'F2'` to the form_type filter in `detect_new_filings.py`
+2. **Periodic Candidate Sync:** Daily/weekly pull of `/candidates/` endpoint to catch new registrations
+3. **Both:** Real-time Form 2 detection + periodic sync as backup
+
+**Timeline:** Post-Jan 15, 2026 (after notification system is battle-tested)
+
+**Estimated Effort:** Small - extends existing detection infrastructure
+
+**Related:** This is separate from the financial filing notification system (which is production-ready for Jan 15, 2026).
+
+---
+
+**Document Version:** 1.1
+**Last Updated:** December 15, 2025
 **Next Review:** After Phase 1 completion
 
 ---

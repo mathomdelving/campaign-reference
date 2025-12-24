@@ -787,18 +787,49 @@ export function CommitteeView() {
         ).map((entity) => ({ ...entity, subtitle: "Committee" }));
 
         if (!cancelled) {
+          // DEBUG: Log all results containing "sanders"
+          if (searchTerm.toLowerCase().includes('sanders') || searchTerm.toLowerCase().includes('bernard')) {
+            console.log('[DEBUG] Person results:', personResults.map(p => ({ id: p.id, label: p.label, type: p.type })));
+            console.log('[DEBUG] Candidate results:', candidateResults.map(c => ({ id: c.id, label: c.label, type: c.type, personId: c.personId })));
+          }
+
           // Get set of person_ids that appeared in person results
           // We'll use this to filter out duplicate candidates
           const personIdsInResults = new Set(personResults.map(p => p.id));
 
+          // Track person_ids from candidates to enforce "One Name" rule
+          const seenPersonIds = new Set<string>();
+          // Also track candidate labels (names) to catch duplicates without person_id
+          const seenLabels = new Set<string>();
+
           // Filter out candidates that are already represented by a political_person
           // This prevents duplicates like "John Fetterman" (person) + "FETTERMAN, JOHN" (candidate)
+          // ALSO filter out candidates that share a person_id with another candidate (One Name rule)
           const uniqueCandidateResults = candidateResults.filter(candidate => {
             // If this candidate has a person_id that matches a person in our results, skip it
             if (candidate.personId && personIdsInResults.has(candidate.personId)) {
               console.log(`[Committee Search] Filtering out duplicate: ${candidate.label} (person already in results)`);
               return false;
             }
+
+            // If this candidate has a person_id we've already seen in candidates, skip it (One Name rule)
+            if (candidate.personId) {
+              if (seenPersonIds.has(candidate.personId)) {
+                console.log(`[Committee Search] Filtering out duplicate candidate: ${candidate.label} (person_id ${candidate.personId} already used)`);
+                return false;
+              }
+              seenPersonIds.add(candidate.personId);
+            }
+
+            // NEW: Also check by label/name to catch candidates without person_id
+            // Normalize the label for comparison
+            const normalizedLabel = candidate.label.toLowerCase().trim();
+            if (seenLabels.has(normalizedLabel)) {
+              console.log(`[Committee Search] Filtering out duplicate by name: ${candidate.label} (name already used, no person_id)`);
+              return false;
+            }
+            seenLabels.add(normalizedLabel);
+
             return true;
           });
 

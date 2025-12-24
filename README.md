@@ -1,92 +1,58 @@
-# Campaign Reference 🏁
+# Campaign Reference
 
-**A RedBull Racing-inspired campaign finance dashboard for 2026 House and Senate races**
+**Campaign finance dashboard for 2022-2026 House and Senate races**
 
 Real-time FEC data visualization with automated daily updates.
 
-🔗 **Live Site:** [https://campaign-reference.com](https://campaign-reference.com)
-📊 **Repository:** [https://github.com/mathomdelving/campaign-reference](https://github.com/mathomdelving/campaign-reference)
+**Live Site:** [https://campaign-reference.com](https://campaign-reference.com)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-### Development Server
 ```bash
 cd apps/labs
 npm install
 npm run dev
 ```
 
-The app will be available at [http://localhost:3000](http://localhost:3000)
-
-### Monitor Automated Data Updates
-Data automatically updates daily at 6 AM ET via GitHub Actions. Check logs:
-```bash
-# View GitHub Actions workflow status
-gh run list --workflow=update-data.yml
-
-# View latest run logs
-gh run view --log
-```
+App available at http://localhost:3000
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 campaign-reference/
-├── apps/
-│   └── labs/              # Next.js App Router application (production UI)
-│       ├── src/
-│       │   ├── app/      # Route segments
-│       │   ├── components/ # Auth, layout, tables, etc.
-│       │   ├── hooks/    # Supabase data hooks
-│       │   └── utils/    # Formatting + chart helpers
-│       └── ...
+├── apps/labs/             # Next.js application (production UI)
+│   └── src/
+│       ├── app/           # Next.js App Router pages
+│       ├── components/    # React components
+│       ├── hooks/         # Custom data hooks
+│       └── utils/         # Formatting helpers
+│
+├── scripts/               # Data collection & utilities
+│   ├── collect_cycle_data.py    # Main data collection script
+│   ├── data-collection/   # Collection scripts
+│   ├── data-loading/      # Database loading scripts
+│   ├── maintenance/       # Maintenance & notifications
+│   └── validation/        # Data validation scripts
 │
 ├── docs/                  # Documentation
-│   ├── ROADMAP.md                     # Project roadmap and phases
-│   ├── GITHUB_DEPLOYMENT_GUIDE.md     # GitHub setup instructions
-│   ├── VERCEL_DEPLOYMENT_GUIDE.md     # Vercel deployment guide
-│   ├── DEBUGGING_FINDINGS.md          # Technical analysis of data issues
-│   ├── IMPLEMENTATION_PLAN.md         # Quarterly timeseries implementation
-│   └── RATE_LIMIT_ANALYSIS.md         # FEC API rate limiting details
+│   ├── ROADMAP.md         # Project roadmap
+│   ├── data/              # Data documentation
+│   ├── deployment/        # Deployment guides
+│   └── guides/            # How-to guides
 │
-├── .github/
-│   └── workflows/
-│       └── update-data.yml            # Automated data refresh workflow
-│
-├── sql/                   # Database schemas
-│   └── create_quarterly_table.sql     # Quarterly financials table
-│
-├── fetch_fec_data.py      # Main data collection script
-├── load_to_supabase.py    # Database loading script
-├── vercel.json            # Vercel deployment configuration
-├── requirements.txt       # Python dependencies
-└── README.md              # This file
+├── sql/                   # Database migrations & schemas
+├── .github/workflows/     # GitHub Actions (daily data updates)
+├── archive/               # Old/obsolete scripts & docs
+└── fec_bulk_data/         # Raw FEC bulk data files
 ```
 
 ---
 
-## 🎨 Campaign Reference Branding
-
-### Primary Colors (Red Bull Racing Inspired)
-- **Navy Blue:** `#121F45` - Primary backgrounds
-- **Blue:** `#223971` - Secondary backgrounds
-- **Red:** `#CC1E4A` - Accents and CTAs
-- **Yellow:** `#FFC906` - Highlights
-- **White:** `#FFFFFF` - Text on dark backgrounds
-
-### Party Colors (Standard)
-- **Democrats:** `#2563EB` (Blue)
-- **Republicans:** `#DC2626` (Red)
-- **Independents:** `#7C3AED` (Purple)
-- **Others:** `#6B7280` (Gray)
-
----
-
-## 🎯 Features
+## Features
 
 1. **Leaderboard View** – Top fundraisers with sortable columns and CSV export
 2. **By District** – Compare all candidates within a specific House district or Senate seat
@@ -96,13 +62,13 @@ campaign-reference/
 
 ---
 
-## 📊 Data Pipeline
+## Data Pipeline
 
 ### 1. Automated Data Collection (GitHub Actions)
 - **Daily Updates:** 6 AM ET (11 AM UTC)
 - **Filing Period Updates:** Every 2 hours on days 13-17 of Jan, Apr, Jul, Oct
 - Fetches candidate and quarterly financial data from FEC API
-- Rate limited: 900 requests/hour (safely under FEC's 1,000/hour limit)
+- Rate limited: 900 requests/hour for collection (7,000/hour limit available)
 - Automated via GitHub Actions workflow
 
 ### 2. Database (Supabase)
@@ -112,33 +78,23 @@ campaign-reference/
   - `quarterly_financials` - Historical quarterly filings
 - Automatic refresh logging in `data_refresh_log`
 
-### 3. Frontend (React + Vite)
+### 3. Frontend (Next.js)
 - Deployed on Vercel
 - Automatic deployments on git push
 - Real-time data from Supabase
 - Interactive charts with Recharts
-- Export to CSV/PNG with html2canvas
 
 ---
 
-## 🔧 Tech Stack
+## Tech Stack
 
-### Frontend (production)
-- Next.js 16 (App Router, Turbopack)
+### Frontend
+- Next.js (App Router)
 - React 19
-- Tailwind CSS 4 (with project-specific tokens)
+- Tailwind CSS
 - shadcn/ui + Radix primitives
-- Recharts 3.3.0
-- Supabase JS Client 2.76.1
-- Playwright (local only, future share flow – currently disabled)
-
-### Legacy Frontend (archived)
-- React 19.1.1
-- Vite 7.1.7
-- Tailwind CSS 3.4.18
-- Recharts 3.3.0
-- Supabase JS Client 2.76.1
-- React Router 7.1.3
+- Recharts
+- Supabase JS Client
 
 ### Backend/Data
 - Python 3.9+
@@ -153,68 +109,35 @@ campaign-reference/
 
 ---
 
-## 📈 Current Status
+## Status
 
-**✅ Phase 1-3: Complete**
-- Data collection infrastructure
-- Database schema with quarterly financials
-- Three-view dashboard (Leaderboard, By District, By Candidate)
-- Red Bull Racing-inspired UI
-
-**✅ Phase 4: Complete**
-- GitHub Actions automation
-- Daily data updates at 6 AM ET
-- Intensive updates during filing periods
-
-**✅ Phase 5: Complete**
-- Vercel deployment
-- Custom domain: campaign-reference.com
-- Automatic deployments on push
-- Live in production with SSL/HTTPS
-
-**🎯 Current Focus:**
-- Monitoring automated data updates
-- Gathering user feedback
-- Performance optimization
+**Live in Production**
+- Dashboard with Leaderboard, District, and Committee views
+- Automated daily data updates via GitHub Actions
+- Deployed on Vercel at campaign-reference.com
 
 ---
 
-## 🛠️ Development
+## Development
 
-### Python Scripts (Local/Manual Use)
-```bash
-# Install dependencies
-pip3 install -r requirements.txt
-
-# Manually collect FEC data
-python3 fetch_fec_data.py
-
-# Manually load to database
-python3 load_to_supabase.py
-```
-
-**Note:** Data updates are automated via GitHub Actions. Manual runs are only needed for testing or ad-hoc updates.
-
-### Frontend Development (Next.js Labs)
+### Frontend
 ```bash
 cd apps/labs
-
-# Install dependencies
 npm install
-
-# Start dev server (localhost:3000)
 npm run dev
-
-# Build for production
-npm run build
-
-# Type check
-npm run lint && npx tsc --noEmit
 ```
+App runs at http://localhost:3000
+
+### Data Collection (Manual)
+```bash
+pip3 install -r requirements.txt
+python3 scripts/collect_cycle_data.py --cycle 2024
+```
+Note: Data updates are automated via GitHub Actions. Manual runs are only needed for testing.
 
 ---
 
-## 📝 Environment Variables
+## Environment Variables
 
 ### GitHub Secrets (for Actions)
 ```
@@ -246,24 +169,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_public_key
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 See `docs/` folder for detailed documentation:
-- `ROADMAP.md` - Complete project history and roadmap
-- `GITHUB_DEPLOYMENT_GUIDE.md` - Step-by-step GitHub setup
-- `VERCEL_DEPLOYMENT_GUIDE.md` - Step-by-step Vercel deployment
-- `IMPLEMENTATION_PLAN.md` - Technical implementation details
-- `RATE_LIMIT_ANALYSIS.md` - FEC API rate limiting breakdown
-- `DEBUGGING_FINDINGS.md` - Technical analysis and solutions
+- `ROADMAP.md` - Project roadmap
+- `deployment/` - Deployment guides
+- `guides/` - How-to guides
+- `data/` - Data collection documentation
 
 ---
 
-## 🏁 Campaign Reference
-
-*Inspired by sports-reference.com sites (baseball-reference, football-reference) and styled after RedBull Racing.*
+*Inspired by sports-reference.com sites (baseball-reference, football-reference).*
 
 Built for political journalists, researchers, and enthusiasts who need fast, accurate campaign finance data.
-
-**Version:** 1.0.0 (Deployed)
-**Last Updated:** October 26, 2025
-**Status:** ✅ Live in Production

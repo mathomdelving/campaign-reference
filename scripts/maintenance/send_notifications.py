@@ -127,13 +127,19 @@ def create_email_html(filing_data, unsubscribe_url):
     coverage_end_date = filing_data.get('coverage_end_date', '')
     report_type = filing_data.get('report_type', 'Financial Report')
 
-    # Format office display
-    if office == 'H':
-        office_display = f"U.S. House - {state}-{district}" if district else f"U.S. House - {state}"
-    elif office == 'S':
+    # Format office display (handle variations: 'H', 'House', 'S', 'Senate', 'P', 'President')
+    office_upper = (office or '').upper()
+    # Clean district - treat '00', '', None as no district
+    clean_district = district if district and district not in ('00', '0', '') else None
+
+    if office_upper in ('H', 'HOUSE'):
+        office_display = f"U.S. House - {state}-{clean_district}" if clean_district else f"U.S. House - {state}"
+    elif office_upper in ('S', 'SENATE'):
         office_display = f"U.S. Senate - {state}"
+    elif office_upper in ('P', 'PRESIDENT'):
+        office_display = "U.S. President"
     else:
-        office_display = f"{office} - {state}"
+        office_display = f"{office} - {state}" if state else (office or "Unknown Office")
 
     # Determine party color
     party_colors = {
@@ -296,12 +302,19 @@ def create_email_text(filing_data):
     coverage_end_date = filing_data.get('coverage_end_date', '')
     report_type = filing_data.get('report_type', 'Financial Report')
 
-    if office == 'H':
-        office_display = f"U.S. House - {state}-{district}" if district else f"U.S. House - {state}"
-    elif office == 'S':
+    # Format office display (handle variations: 'H', 'House', 'S', 'Senate', 'P', 'President')
+    office_upper = (office or '').upper()
+    # Clean district - treat '00', '', None as no district
+    clean_district = district if district and district not in ('00', '0', '') else None
+
+    if office_upper in ('H', 'HOUSE'):
+        office_display = f"U.S. House - {state}-{clean_district}" if clean_district else f"U.S. House - {state}"
+    elif office_upper in ('S', 'SENATE'):
         office_display = f"U.S. Senate - {state}"
+    elif office_upper in ('P', 'PRESIDENT'):
+        office_display = "U.S. President"
     else:
-        office_display = f"{office} - {state}"
+        office_display = f"{office} - {state}" if state else (office or "Unknown Office")
 
     text = f"""
 NEW FILING REPORT - {datetime.now().strftime('%B %d, %Y')}

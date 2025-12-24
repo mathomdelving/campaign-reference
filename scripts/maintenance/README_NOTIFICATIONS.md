@@ -29,6 +29,40 @@ Complete system for detecting new FEC filings and notifying users via email.
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## Recent Updates (December 2025)
+
+### ✅ Test-All Mode for Early Filer Detection
+Added `--test-all EMAIL` mode to catch **any** new filing during the testing period (Jan 5-11) before the Jan 15 deadline:
+
+```bash
+# Notify you of ALL filings (regardless of follows)
+python scripts/maintenance/detect_new_filings.py --test-all your@email.com
+
+# Dry run first
+python scripts/maintenance/detect_new_filings.py --test-all your@email.com --dry-run --once
+```
+
+### ✅ Office Display Consistency Fix
+Fixed formatting to handle all office variations consistently:
+- `office='H'` or `'House'` → **U.S. House - ST-##**
+- `office='S'` or `'Senate'` → **U.S. Senate - ST**
+- `office='P'` or `'President'` → **U.S. President**
+- `district='00'` treated as no district (Senate placeholder)
+
+### ✅ Per-Filing Financial Data
+Changed from cumulative cycle totals to per-filing amounts:
+- Notifications now show the amounts from that specific filing
+- Uses `quarterly_financials` table instead of `financial_summary`
+- Correctly displays Q3 amounts for Q3 filings, Year-End amounts for Year-End filings, etc.
+
+### ✅ Candidate Resolution from Committee
+Added `resolve_candidate_from_committee()` to handle filings without `candidate_id`:
+- First checks our database
+- Falls back to FEC API committee endpoint
+- Enriches filings with candidate name, party, state, office, district
+
+---
+
 ## Quick Start
 
 ### Prerequisites
@@ -158,16 +192,13 @@ WantedBy=multi-user.target
 
 ## Performance & Rate Limits
 
-### Current Rate Limit: 1,000 requests/hour
+### Current Rate Limit: 7,000 requests/hour ✅
 
 **Detection script:**
 - Polls every 30 seconds = 120 requests/hour
-- Safe for testing ✅
-
-**Upgrading to 7,000 requests/hour:**
-- Detection: 120 requests/hour (polling)
 - Remaining: 6,880 requests/hour for detail fetches
-- Can handle 100+ new filings per hour easily
+- Can handle 3,000+ new filings per hour easily
+- Well within capacity for Jan 15 filing deadline
 
 ### Expected Latency
 
@@ -244,7 +275,7 @@ CREATE TABLE notification_queue (
 
 ### Rate limit issues
 
-If you hit rate limits during testing (1,000/hour):
+If you hit rate limits (unlikely with 7,000/hour limit):
 
 **Reduce polling frequency:**
 ```bash

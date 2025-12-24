@@ -46,3 +46,15 @@ node_modules/
 # Build outputs
 dist/
 build/
+
+# Investigation scripts (temporary - used during development)
+investigate_*.js
+check_*.js
+query_*.js
+search_*.js
+explore_*.js
+analyze_*.js
+verify_*.js
+test_frontend_query.js
+test_nm_senate.js
+test_mike_johnson.js

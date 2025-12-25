@@ -166,11 +166,11 @@ done
 **Cron jobs:**
 ```cron
 # Detect new filings every 30 seconds (use systemd service instead for < 1 min intervals)
-* * * * * cd /path/to/fec-dashboard && python scripts/maintenance/detect_new_filings.py --once
-* * * * * sleep 30 && cd /path/to/fec-dashboard && python scripts/maintenance/detect_new_filings.py --once
+* * * * * cd /path/to/campaign-reference && python scripts/maintenance/detect_new_filings.py --once
+* * * * * sleep 30 && cd /path/to/campaign-reference && python scripts/maintenance/detect_new_filings.py --once
 
 # Send notifications every 5 minutes
-*/5 * * * * cd /path/to/fec-dashboard && python scripts/maintenance/send_notifications.py
+*/5 * * * * cd /path/to/campaign-reference && python scripts/maintenance/send_notifications.py
 ```
 
 **Or use systemd service (better for frequent runs):**
@@ -182,7 +182,7 @@ After=network.target
 [Service]
 Type=simple
 User=your-user
-WorkingDirectory=/path/to/fec-dashboard
+WorkingDirectory=/path/to/campaign-reference
 ExecStart=/usr/bin/python3 scripts/maintenance/detect_new_filings.py
 Restart=always
 

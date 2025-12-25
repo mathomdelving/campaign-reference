@@ -435,7 +435,7 @@ See `docs/GITHUB_ACTIONS_SETUP.md` for detailed instructions.
 5. Deploy (automatic on push)
 
 **Domain:**
-- Free: `fec-dashboard.vercel.app`
+- Free: `campaign-reference.vercel.app`
 - Custom domain supported
 
 ### Backend/Data
@@ -662,7 +662,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 
 ## Current File Structure
 ```
-fec-dashboard/
+campaign-reference/
 ├── .env                        # Backend API keys (not in git)
 ├── .gitignore                  # Excludes sensitive files
 ├── fetch_fec_data.py           # Data collection script

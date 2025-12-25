@@ -35,7 +35,7 @@ MANUAL_OVERRIDES = {
 
 def main():
     # Load the mapping file
-    mapping_file = '/Users/benjaminnelson/Desktop/fec-dashboard/scripts/senate_class_mapping.json'
+    mapping_file = '/Users/benjaminnelson/Desktop/campaign-reference/scripts/senate_class_mapping.json'
 
     print("Loading mapping file...")
     with open(mapping_file, 'r') as f:

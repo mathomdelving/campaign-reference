@@ -47,7 +47,7 @@ The migration is **complete and live** at https://campaign-reference.com, but th
 
 **Option A: Rename to `/app`**
 ```bash
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 git mv apps/labs app
 # Update all references in docs
 git commit -m "chore: rename labs to app (it's production, not experimental)"
@@ -71,7 +71,7 @@ git commit -m "chore: rename labs to app (it's production, not experimental)"
 
 **Steps:**
 ```bash
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 
 # 1. Verify legacy branch exists
 git branch -a | grep legacy/vite-ui

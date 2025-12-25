@@ -3,9 +3,9 @@
 ## Location & How to Create
 
 These schemas are defined in:
-1. Python fetch script: `/Users/benjaminnelson/Desktop/fec-dashboard/fetch_fec_data.py` (lines 38-320)
-2. SQL file: `/Users/benjaminnelson/Desktop/fec-dashboard/sql/create_quarterly_table.sql`
-3. Frontend queries: `/Users/benjaminnelson/Desktop/fec-dashboard/apps/labs/src/hooks/*.ts`
+1. Python fetch script: `/Users/benjaminnelson/Desktop/campaign-reference/fetch_fec_data.py` (lines 38-320)
+2. SQL file: `/Users/benjaminnelson/Desktop/campaign-reference/sql/create_quarterly_table.sql`
+3. Frontend queries: `/Users/benjaminnelson/Desktop/campaign-reference/apps/labs/src/hooks/*.ts`
 
 The tables are created manually in Supabase (no migrations exist for main tables - only for user profiles).
 
@@ -59,7 +59,7 @@ CREATE INDEX idx_candidates_name ON candidates(name);
 ```
 
 ### Actual Data Sample
-From `/Users/benjaminnelson/Desktop/fec-dashboard/candidates_2026.json`:
+From `/Users/benjaminnelson/Desktop/campaign-reference/candidates_2026.json`:
 ```json
 {
   "active_through": 2026,
@@ -141,7 +141,7 @@ CREATE INDEX idx_fs_updated ON financial_summary(updated_at);
 ```
 
 ### Actual Data Sample
-From `/Users/benjaminnelson/Desktop/fec-dashboard/financials_2026.json`:
+From `/Users/benjaminnelson/Desktop/campaign-reference/financials_2026.json`:
 ```json
 {
   "candidate_id": "H2NY12197",
@@ -181,7 +181,7 @@ const { data: page, error: financialsError } = await browserClient
 
 ## 3. QUARTERLY_FINANCIALS TABLE
 
-**Status:** Created via SQL file at `/Users/benjaminnelson/Desktop/fec-dashboard/sql/create_quarterly_table.sql`
+**Status:** Created via SQL file at `/Users/benjaminnelson/Desktop/campaign-reference/sql/create_quarterly_table.sql`
 **Source Data:** FEC `/committee/{id}/filings/?form_type=F3` endpoint
 **Created By:** `fetch_fec_data.py` lines 122-204 (`fetch_committee_quarterly_filings()`)
 **Loaded To DB:** Manual Supabase insert
@@ -244,7 +244,7 @@ COMMENT ON COLUMN quarterly_financials.cash_ending IS 'Cash on hand at END of th
 ```
 
 ### Actual Data Sample
-From `/Users/benjaminnelson/Desktop/fec-dashboard/quarterly_financials_2026.json`:
+From `/Users/benjaminnelson/Desktop/campaign-reference/quarterly_financials_2026.json`:
 ```json
 {
   "candidate_id": "H2NY12197",
@@ -320,7 +320,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 ```
-**Location:** `/Users/benjaminnelson/Desktop/fec-dashboard/database/migrations/001_user_profiles.sql`
+**Location:** `/Users/benjaminnelson/Desktop/campaign-reference/database/migrations/001_user_profiles.sql`
 
 ### user_candidate_follows
 ```sql
@@ -332,7 +332,7 @@ CREATE TABLE IF NOT EXISTS user_candidate_follows (
   UNIQUE(user_id, candidate_id)
 );
 ```
-**Location:** `/Users/benjaminnelson/Desktop/fec-dashboard/database/migrations/002_user_candidate_follows.sql`
+**Location:** `/Users/benjaminnelson/Desktop/campaign-reference/database/migrations/002_user_candidate_follows.sql`
 
 ### notification_queue
 ```sql
@@ -347,7 +347,7 @@ CREATE TABLE IF NOT EXISTS notification_queue (
   processed_at TIMESTAMP WITH TIME ZONE
 );
 ```
-**Location:** `/Users/benjaminnelson/Desktop/fec-dashboard/database/migrations/003_notification_queue.sql`
+**Location:** `/Users/benjaminnelson/Desktop/campaign-reference/database/migrations/003_notification_queue.sql`
 
 ---
 

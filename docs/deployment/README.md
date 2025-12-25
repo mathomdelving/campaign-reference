@@ -37,7 +37,7 @@ This guide provides a quick-start overview. For detailed step-by-step instructio
 
 ```bash
 # Navigate to project
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 
 # Initialize git (if not already done)
 git init

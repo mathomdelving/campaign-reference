@@ -17,7 +17,7 @@ Before the automation will work, you need to add three secrets to your GitHub re
 ### Step-by-Step Instructions
 
 1. **Go to your GitHub repository** in a web browser
-   - Navigate to: `https://github.com/YOUR_USERNAME/fec-dashboard`
+   - Navigate to: `https://github.com/YOUR_USERNAME/campaign-reference`
 
 2. **Click on "Settings"** (top navigation bar)
 

@@ -60,7 +60,7 @@ scripts/
 
 ```bash
 # Use the proper collection script
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 python3 scripts/data-collection/fetch_fec_data.py
 ```
 

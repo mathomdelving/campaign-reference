@@ -32,7 +32,7 @@ tail -3 fetch_output.log
 ### If Process Stopped
 ```bash
 # Restart - it will automatically resume from progress.json
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 nohup python3 -u fetch_fec_data.py > fetch_output.log 2>&1 &
 
 # Keep computer awake
@@ -180,7 +180,7 @@ apps/labs/src/
 ## 📁 Current Project Structure
 
 ```
-fec-dashboard/
+campaign-reference/
 ├── docs/                         # Documentation
 │   ├── ROADMAP.md                # Full project history
 │   ├── IMPLEMENTATION_PLAN.md    # Quarterly timeseries plan
@@ -317,7 +317,7 @@ grep "last_processed_index" progress.json
 
 ```bash
 # Navigate to project
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 
 # Check collection status
 ps aux | grep fetch_fec_data | grep -v grep

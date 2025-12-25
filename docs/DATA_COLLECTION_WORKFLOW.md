@@ -116,7 +116,7 @@ An overnight script uploaded data directly to Supabase without saving to JSON fi
 
 ```bash
 # 1. Collection (Step 1)
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 python3 scripts/data-collection/fetch_fec_data.py
 
 # 2. Review the JSON files

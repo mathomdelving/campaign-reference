@@ -41,7 +41,7 @@ Templates in this directory should remain unchanged. When you need to collect da
 
 2. **Test with dry run** (processes first 50 candidates only):
    ```bash
-   cd /Users/benjaminnelson/Desktop/fec-dashboard
+   cd /Users/benjaminnelson/Desktop/campaign-reference
    python3 scripts/data-collection/fetch_2020.py --cycle 2020 --dry-run
    ```
 

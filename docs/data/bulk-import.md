@@ -69,7 +69,7 @@ This guide is split into 3 focused documents:
 
 ### Source Code
 ```
-/Users/benjaminnelson/Desktop/fec-dashboard/
+/Users/benjaminnelson/Desktop/campaign-reference/
 ├── fetch_fec_data.py          # Python script to fetch from FEC API
 ├── sql/
 │   └── create_quarterly_table.sql
@@ -80,7 +80,7 @@ This guide is split into 3 focused documents:
 
 ### Documentation
 ```
-/Users/benjaminnelson/Desktop/fec-dashboard/docs/
+/Users/benjaminnelson/Desktop/campaign-reference/docs/
 ├── fec_schema_mapping.md           # MAIN REFERENCE
 ├── actual_database_schemas.md      # IMPLEMENTATION
 ├── fec_quick_reference.md          # QUICK LOOKUP
@@ -91,7 +91,7 @@ This guide is split into 3 focused documents:
 
 ### Generated Data Files
 ```
-/Users/benjaminnelson/Desktop/fec-dashboard/
+/Users/benjaminnelson/Desktop/campaign-reference/
 ├── candidates_2026.json            # 5,185 candidates
 ├── financials_2026.json            # Financial summaries
 └── quarterly_financials_2026.json  # ~20,000 quarterly records

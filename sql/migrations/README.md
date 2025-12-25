@@ -52,7 +52,7 @@ export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 
 Run the population script:
 ```bash
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 node scripts/populate_political_persons.js
 ```
 

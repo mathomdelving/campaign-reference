@@ -3,26 +3,26 @@
 ## Key Files & Locations
 
 ### Python Data Fetching
-- **Main Script:** `/Users/benjaminnelson/Desktop/fec-dashboard/fetch_fec_data.py`
+- **Main Script:** `/Users/benjaminnelson/Desktop/campaign-reference/fetch_fec_data.py`
   - Lines 38-84: `fetch_candidates()` - Gets all House/Senate candidates
   - Lines 86-120: `fetch_candidate_financials()` - Gets cumulative totals for each candidate
   - Lines 122-204: `fetch_committee_quarterly_filings()` - Gets quarterly filings with timeseries data
   - Lines 206-360: `main()` - Orchestrates fetching and saving to JSON files
 
 ### SQL Schemas
-- **Quarterly Table:** `/Users/benjaminnelson/Desktop/fec-dashboard/sql/create_quarterly_table.sql`
-- **User Features:** `/Users/benjaminnelson/Desktop/fec-dashboard/database/migrations/`
+- **Quarterly Table:** `/Users/benjaminnelson/Desktop/campaign-reference/sql/create_quarterly_table.sql`
+- **User Features:** `/Users/benjaminnelson/Desktop/campaign-reference/database/migrations/`
   - `001_user_profiles.sql`
   - `002_user_candidate_follows.sql`
   - `003_notification_queue.sql`
 
 ### Frontend Data Hooks
-- **Candidate Data:** `/Users/benjaminnelson/Desktop/fec-dashboard/apps/labs/src/hooks/useCandidateData.ts`
+- **Candidate Data:** `/Users/benjaminnelson/Desktop/campaign-reference/apps/labs/src/hooks/useCandidateData.ts`
   - Fetches: `financial_summary` table
   - Returns: LeaderboardCandidate[] with totals and metadata
   - Lines 68-71: Main query to financial_summary
 
-- **Quarterly Data:** `/Users/benjaminnelson/Desktop/fec-dashboard/apps/labs/src/hooks/useQuarterlyData.ts`
+- **Quarterly Data:** `/Users/benjaminnelson/Desktop/campaign-reference/apps/labs/src/hooks/useQuarterlyData.ts`
   - Fetches: `quarterly_financials` table
   - Returns: QuarterlyRecord[] with per-quarter breakdowns
   - Lines 74-79: Main query to quarterly_financials
@@ -33,8 +33,8 @@
 - `quarterly_financials_2026.json` - ~20,000 quarterly filings
 
 ### Documentation
-- **Schema Analysis:** `/Users/benjaminnelson/Desktop/fec-dashboard/docs/DEBUGGING_FINDINGS.md`
-- **Implementation Plan:** `/Users/benjaminnelson/Desktop/fec-dashboard/docs/IMPLEMENTATION_PLAN.md`
+- **Schema Analysis:** `/Users/benjaminnelson/Desktop/campaign-reference/docs/DEBUGGING_FINDINGS.md`
+- **Implementation Plan:** `/Users/benjaminnelson/Desktop/campaign-reference/docs/IMPLEMENTATION_PLAN.md`
 
 ---
 

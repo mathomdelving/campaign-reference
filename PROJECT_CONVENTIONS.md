@@ -21,7 +21,7 @@ This document establishes conventions to prevent clutter and maintain a clean, o
 ### Active Production Files
 
 ```
-fec-dashboard/
+campaign-reference/
 ├── README.md                    # Project overview
 ├── CHANGELOG.md                 # Active changelog
 ├── PROJECT_STATUS.md            # Current project state
@@ -55,7 +55,7 @@ fec-dashboard/
 ### Archive & Temporary Files
 
 ```
-fec-dashboard/
+campaign-reference/
 ├── archive/                     # Historical reference
 │   ├── experiments/            # One-off scripts
 │   │   ├── python/

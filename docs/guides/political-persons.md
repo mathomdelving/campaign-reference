@@ -186,7 +186,7 @@ Via Supabase Dashboard:
 
 ```bash
 # Option A: Use existing .env.local
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 
 # Option B: Export manually
 export NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"

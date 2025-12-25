@@ -22,7 +22,7 @@ This is NOT optional. This rule exists because of a real incident (November 18-1
 ### Step 1: Collect Data to JSON
 
 ```bash
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 python3 scripts/collect_cycle_data.py --cycle <YEAR> --max-retries 3
 ```
 

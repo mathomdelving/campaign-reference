@@ -11,7 +11,7 @@ This guide will walk you through pushing your code to GitHub, adding secrets, an
 Open Terminal and navigate to your project directory:
 
 ```bash
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 ```
 
 Initialize git:
@@ -20,7 +20,7 @@ Initialize git:
 git init
 ```
 
-You should see: `Initialized empty Git repository in /Users/benjaminnelson/Desktop/fec-dashboard/.git/`
+You should see: `Initialized empty Git repository in /Users/benjaminnelson/Desktop/campaign-reference/.git/`
 
 ### Step 2: Add All Files to Git
 
@@ -44,7 +44,7 @@ You should see a summary of files added.
 2. **Click the "+" icon** in the top-right corner
 3. **Click "New repository"**
 4. **Fill in the details:**
-   - Repository name: `fec-dashboard` (or whatever you prefer)
+   - Repository name: `campaign-reference` (or whatever you prefer)
    - Description: `Interactive dashboard for 2026 House and Senate campaign finance data`
    - **Public** (recommended for free GitHub Pages/Actions)
    - **DO NOT** check "Initialize with README" (you already have code)
@@ -56,7 +56,7 @@ You should see a summary of files added.
 After creating the repository, GitHub will show you commands. Use these:
 
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/fec-dashboard.git
+git remote add origin https://github.com/YOUR_USERNAME/campaign-reference.git
 git branch -M main
 git push -u origin main
 ```
@@ -70,7 +70,7 @@ git push -u origin main
 **To create a Personal Access Token:**
 1. Go to: https://github.com/settings/tokens
 2. Click "Generate new token" → "Generate new token (classic)"
-3. Give it a name: `fec-dashboard-upload`
+3. Give it a name: `campaign-reference-upload`
 4. Select scopes: Check "repo" (this gives full repository access)
 5. Click "Generate token"
 6. **COPY THE TOKEN** (you won't see it again!)
@@ -82,13 +82,13 @@ After successful push, you should see:
 Enumerating objects: ...
 Counting objects: ...
 Writing objects: 100% ...
-To https://github.com/YOUR_USERNAME/fec-dashboard.git
+To https://github.com/YOUR_USERNAME/campaign-reference.git
  * [new branch]      main -> main
 ```
 
 ### Step 6: Verify on GitHub
 
-Go to `https://github.com/YOUR_USERNAME/fec-dashboard` in your browser. You should see all your files!
+Go to `https://github.com/YOUR_USERNAME/campaign-reference` in your browser. You should see all your files!
 
 ---
 
@@ -101,7 +101,7 @@ Now we'll add your API keys and URLs as "secrets" so the GitHub Actions workflow
 First, let's get the values from your local .env file. In Terminal:
 
 ```bash
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 cat .env
 ```
 
@@ -118,7 +118,7 @@ SUPABASE_KEY=eyJhbGc...
 ### Step 2: Navigate to Repository Settings
 
 1. **Go to your GitHub repository** in browser:
-   - `https://github.com/YOUR_USERNAME/fec-dashboard`
+   - `https://github.com/YOUR_USERNAME/campaign-reference`
 
 2. **Click "Settings"** tab (top navigation bar, far right)
 
@@ -180,7 +180,7 @@ Now let's manually trigger the workflow to make sure everything works!
 ### Step 1: Navigate to Actions Tab
 
 1. **Go to your GitHub repository**:
-   - `https://github.com/YOUR_USERNAME/fec-dashboard`
+   - `https://github.com/YOUR_USERNAME/campaign-reference`
 
 2. **Click the "Actions" tab** (top navigation bar)
 
@@ -340,7 +340,7 @@ git push
 **Solution:**
 ```bash
 git remote remove origin
-git remote add origin https://github.com/YOUR_USERNAME/fec-dashboard.git
+git remote add origin https://github.com/YOUR_USERNAME/campaign-reference.git
 ```
 
 ### Problem: "Permission denied" when pushing

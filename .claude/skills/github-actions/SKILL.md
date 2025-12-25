@@ -131,7 +131,7 @@ gh run rerun <RUN_ID> --failed
 
 ### View in Browser
 ```
-https://github.com/YOUR_USERNAME/fec-dashboard/actions
+https://github.com/YOUR_USERNAME/campaign-reference/actions
 ```
 
 ### Email Notifications

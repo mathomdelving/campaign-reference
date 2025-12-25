@@ -79,7 +79,7 @@ COMMENT ON TABLE quarterly_financials IS 'Individual quarterly FEC filings for t
 In your terminal, run:
 
 ```bash
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 python3 fetch_fec_data.py
 ```
 
@@ -109,7 +109,7 @@ python3 fetch_fec_data.py
 If you want to close your terminal and let it run:
 
 ```bash
-cd /Users/benjaminnelson/Desktop/fec-dashboard
+cd /Users/benjaminnelson/Desktop/campaign-reference
 nohup python3 fetch_fec_data.py > fetch_output.log 2>&1 &
 ```
 

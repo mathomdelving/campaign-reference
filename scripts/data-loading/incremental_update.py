@@ -60,6 +60,34 @@ def get_last_update_time():
     return (datetime.now() - timedelta(days=1)).isoformat()
 
 
+def retry_request(func, *args, **kwargs):
+    """
+    Retry a request with exponential backoff for rate limiting (429)
+    Max retries: 5
+    """
+    max_retries = 5
+    base_wait = 2
+
+    for attempt in range(max_retries):
+        try:
+            response = func(*args, **kwargs)
+            if response.status_code == 429:
+                wait_time = base_wait * (2 ** attempt)
+                print(f"    ⚠️  Rate limited (429). Waiting {wait_time}s...")
+                time.sleep(wait_time)
+                continue
+            return response
+        except requests.exceptions.RequestException as e:
+            # For connection errors, also retry
+            if attempt < max_retries - 1:
+                wait_time = base_wait * (2 ** attempt)
+                print(f"    ⚠️  Connection error: {e}. Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+                continue
+            raise e
+    return None
+
+
 def get_recent_filings(since_date, max_pages=10):
     """
     Fetch all filings received since the given date
@@ -90,7 +118,11 @@ def get_recent_filings(since_date, max_pages=10):
         }
 
         try:
-            response = requests.get(url, params=params)
+            response = retry_request(requests.get, url, params=params)
+            if not response:
+                print(f"  Failed to fetch page {page} after retries")
+                break
+                
             response.raise_for_status()
 
             data = response.json()
@@ -155,16 +187,17 @@ def get_candidate_id_for_committee(committee_id):
     params = {'api_key': FEC_API_KEY}
 
     try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
+        response = retry_request(requests.get, url, params=params)
+        if response:
+            response.raise_for_status()
 
-        data = response.json()
-        results = data.get('results', [])
+            data = response.json()
+            results = data.get('results', [])
 
-        if results:
-            candidate_id = results[0].get('candidate_ids', [])
-            if candidate_id:
-                return candidate_id[0]
+            if results:
+                candidate_id = results[0].get('candidate_ids', [])
+                if candidate_id:
+                    return candidate_id[0]
 
         time.sleep(0.5)
 
@@ -180,14 +213,15 @@ def fetch_candidate_info(candidate_id):
     params = {'api_key': FEC_API_KEY}
 
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
+        response = retry_request(requests.get, url, params=params, timeout=10)
+        if response:
+            response.raise_for_status()
 
-        data = response.json()
-        results = data.get('results', [])
+            data = response.json()
+            results = data.get('results', [])
 
-        if results:
-            return results[0]
+            if results:
+                return results[0]
 
     except requests.exceptions.RequestException as e:
         print(f"    Error fetching candidate info: {e}")
@@ -204,14 +238,15 @@ def fetch_candidate_financials(candidate_id):
     }
 
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
+        response = retry_request(requests.get, url, params=params, timeout=10)
+        if response:
+            response.raise_for_status()
 
-        data = response.json()
-        results = data.get('results', [])
+            data = response.json()
+            results = data.get('results', [])
 
-        if results:
-            return results[0]
+            if results:
+                return results[0]
 
     except requests.exceptions.RequestException as e:
         print(f"    Error fetching financials: {e}")

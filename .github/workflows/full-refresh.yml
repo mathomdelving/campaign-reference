@@ -31,14 +31,14 @@ jobs:
           FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
         run: |
           echo "Starting full data refresh - this will take 17-18 hours"
-          python fetch_fec_data.py
+          python scripts/data-collection/fetch_fec_data.py
 
       - name: Load data to Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          python load_to_supabase.py
+          python scripts/data-loading/load_to_supabase.py
 
       - name: Log completion
         run: |

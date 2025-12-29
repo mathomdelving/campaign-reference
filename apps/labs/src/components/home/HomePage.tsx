@@ -291,7 +291,10 @@ export function HomePage() {
 
     let firstNonEmptyIndex = 0;
     for (let i = 0; i < sorted.length; i++) {
-      if (allEntityIds.some((id) => typeof sorted[i][id] === "number" && sorted[i][id] > 0)) {
+      if (allEntityIds.some((id) => {
+        const val = sorted[i][id];
+        return typeof val === "number" && val > 0;
+      })) {
         firstNonEmptyIndex = i;
         break;
       }

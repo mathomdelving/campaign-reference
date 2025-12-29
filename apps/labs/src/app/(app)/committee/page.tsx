@@ -1,5 +1,5 @@
-import { CommitteeView } from "@/components/committee/CommitteeView";
+import { redirect } from "next/navigation";
 
 export default function CommitteePage() {
-  return <CommitteeView />;
+  redirect("/");
 }

@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 import { AuthButton } from "@/components/auth/AuthButton";
 
 const NAV_ITEMS = [
+  { href: "/", label: "Home" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/district", label: "By District" },
-  { href: "/committee", label: "By Committee" },
 ];
 
 export function AppNavigation() {
@@ -18,7 +18,7 @@ export function AppNavigation() {
   return (
     <header className="bg-rb-brand-navy text-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 pt-4 pb-6 lg:px-8">
-        <Link href="/leaderboard" aria-label="Campaign Reference home">
+        <Link href="/" aria-label="Campaign Reference home">
           <div className="font-display text-[20px] sm:text-[26px] font-semibold uppercase leading-tight tracking-[0.2rem] sm:tracking-[0.35rem] text-rb-gold" style={{ color: '#FFC906' }}>
             <span className="block">Campaign</span>
             <span className="block">Reference</span>
@@ -30,8 +30,8 @@ export function AppNavigation() {
           <nav className="hidden md:flex items-center gap-4">
             {NAV_ITEMS.map((item) => {
               const isActive =
-                item.href === "/leaderboard"
-                  ? pathname === "/" || pathname.startsWith(item.href)
+                item.href === "/"
+                  ? pathname === "/"
                   : pathname.startsWith(item.href);
 
               const baseClasses =
@@ -109,8 +109,8 @@ export function AppNavigation() {
           <nav className="flex flex-col space-y-4">
             {NAV_ITEMS.map((item) => {
               const isActive =
-                item.href === "/leaderboard"
-                  ? pathname === "/" || pathname.startsWith(item.href)
+                item.href === "/"
+                  ? pathname === "/"
                   : pathname.startsWith(item.href);
 
               return (

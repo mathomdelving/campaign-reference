@@ -324,7 +324,7 @@ export function HomePage() {
         // Also search candidates table directly as fallback (for candidates not linked to political_persons)
         const { data: directCandidates, error: candidatesError } = await browserClient
           .from("candidates")
-          .select("candidate_id, name, party, office, state, district")
+          .select("candidate_id, name, party, office, state, district, person_id")
           .ilike("name", `%${trimmed}%`)
           .limit(8);
 
@@ -333,9 +333,11 @@ export function HomePage() {
         }
 
         // Create candidate results, excluding those already found via political_persons
+        // Filter by BOTH candidate_id AND person_id to avoid duplicates for people with multiple campaigns
         const personCandidateIds = new Set(personResults.map(p => p.candidateId).filter(Boolean));
+        const foundPersonIds = new Set(personResults.map(p => p.id));
         const candidateResults: EntityResult[] = (directCandidates || [])
-          .filter(c => !personCandidateIds.has(c.candidate_id))
+          .filter(c => !personCandidateIds.has(c.candidate_id) && !foundPersonIds.has(c.person_id))
           .map((row) => ({
             type: "candidate" as const,
             id: row.candidate_id,

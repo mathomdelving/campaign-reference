@@ -118,6 +118,9 @@ type EntitySelection = {
   label: string;
   party?: string | null;
   state?: string | null;
+  district?: string | null;
+  office?: string | null;
+  candidateId?: string | null; // For persons, the linked candidate_id for following
   color?: string;
 };
 
@@ -193,10 +196,18 @@ export function HomePage() {
       try {
         const trimmed = searchTerm.trim();
 
-        // Search political_persons first
+        // Search political_persons with linked candidate info for following
         const { data: persons, error: personsError } = await browserClient
           .from("political_persons")
-          .select("person_id, display_name, party, state, current_office")
+          .select(`
+            person_id,
+            display_name,
+            party,
+            state,
+            district,
+            current_office,
+            candidates(candidate_id, office, state, district, cycle)
+          `)
           .ilike("display_name", `%${trimmed}%`)
           .limit(8);
 
@@ -204,14 +215,24 @@ export function HomePage() {
           console.error('[Home Search] Persons query error:', personsError);
         }
 
-        const personResults: EntityResult[] = persons?.map((row) => ({
-          type: "person" as const,
-          id: row.person_id,
-          label: row.display_name,
-          party: row.party,
-          state: row.state,
-          subtitle: [row.party, row.state].filter(Boolean).join(' · ') || "Person",
-        })) ?? [];
+        const personResults: EntityResult[] = persons?.map((row) => {
+          // Get the most recent candidate_id for this person (prefer 2026, then 2024)
+          const candidates = row.candidates || [];
+          const sortedCandidates = [...candidates].sort((a, b) => (b.cycle || 0) - (a.cycle || 0));
+          const latestCandidate = sortedCandidates[0];
+
+          return {
+            type: "person" as const,
+            id: row.person_id,
+            label: row.display_name,
+            party: row.party,
+            state: latestCandidate?.state || row.state,
+            district: latestCandidate?.district || row.district,
+            office: latestCandidate?.office || row.current_office,
+            candidateId: latestCandidate?.candidate_id || null,
+            subtitle: [row.party, row.state].filter(Boolean).join(' · ') || "Person",
+          };
+        }) ?? [];
 
         // Check for committee matches
         const committeeMatches = QUICK_COMMITTEES.filter((entity) =>
@@ -382,8 +403,21 @@ export function HomePage() {
   }, [selectedEntities]);
 
   // Summary data
+  type SummaryData = {
+    id: string;
+    label: string;
+    type: EntityType;
+    party?: string | null;
+    value: number;
+    coverage?: string | null;
+    candidateId?: string | null;
+    office?: string | null;
+    state?: string | null;
+    district?: string | null;
+  };
+
   const summaries = useMemo(() => {
-    const latestById = new Map<string, { id: string; label: string; type: EntityType; party?: string | null; value: number; coverage?: string | null }>();
+    const latestById = new Map<string, SummaryData>();
 
     personIds.forEach((id) => {
       const entity = selectedEntities.find((e) => e.id === id && e.type === "person");
@@ -398,6 +432,10 @@ export function HomePage() {
         party: entity.party,
         value: metric === "receipts" ? latest.receipts : metric === "disbursements" ? latest.disbursements : latest.cashEnding,
         coverage: latest.coverageEnd,
+        candidateId: entity.candidateId,
+        office: entity.office,
+        state: entity.state,
+        district: entity.district,
       });
     });
 
@@ -414,6 +452,10 @@ export function HomePage() {
         party: entity.party,
         value: metric === "receipts" ? latest.receipts : metric === "disbursements" ? latest.disbursements : latest.cashEnding,
         coverage: latest.coverageEnd,
+        candidateId: id, // For candidates, the id IS the candidateId
+        office: entity.office,
+        state: entity.state,
+        district: entity.district,
       });
     });
 
@@ -549,15 +591,18 @@ export function HomePage() {
                       <div className="text-sm text-gray-500">{result.subtitle}</div>
                     </div>
                   </button>
-                  <FollowButton
-                    candidateId={result.id}
-                    candidateName={result.label}
-                    party={result.party ?? null}
-                    office={null}
-                    state={result.state ?? null}
-                    district={null}
-                    size="md"
-                  />
+                  {/* Only show follow button if we have a valid candidate_id */}
+                  {(result.type === 'committee' || result.candidateId) && (
+                    <FollowButton
+                      candidateId={result.candidateId || result.id}
+                      candidateName={result.label}
+                      party={result.party ?? null}
+                      office={result.office ?? null}
+                      state={result.state ?? null}
+                      district={result.district ?? null}
+                      size="md"
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -713,14 +758,14 @@ export function HomePage() {
                   <div key={`${summary.type}-${summary.id}`} className="bg-white rounded-lg p-5">
                     <div className="flex items-start justify-between">
                       <div className="text-xs uppercase tracking-widest text-gray-600">{summary.label}</div>
-                      {(summary.type === "candidate" || summary.type === "person") && (
+                      {(summary.type === "candidate" || (summary.type === "person" && summary.candidateId)) && (
                         <FollowButton
-                          candidateId={summary.id}
+                          candidateId={summary.candidateId || summary.id}
                           candidateName={summary.label}
                           party={summary.party ?? null}
-                          office={null}
-                          state={null}
-                          district={null}
+                          office={summary.office ?? null}
+                          state={summary.state ?? null}
+                          district={summary.district ?? null}
                           size="sm"
                         />
                       )}

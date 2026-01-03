@@ -211,9 +211,8 @@ export function HomePage() {
         // Search by last name only (state filter was too restrictive)
         const { data: candidates, error } = await browserClient
           .from("candidates")
-          .select("candidate_id, name, office, state, district, cycle")
+          .select("candidate_id, name, office, state, district")
           .ilike("name", `%${lastName}%`)
-          .order("cycle", { ascending: false })
           .limit(10);
 
         if (error) {
@@ -299,12 +298,12 @@ export function HomePage() {
         const personIdList = persons?.map(p => p.person_id) || [];
 
         // Fetch candidates linked to these persons (for follow functionality)
-        let candidatesByPerson: Record<string, { candidate_id: string; office: string; state: string; district: string; cycle: number }[]> = {};
+        let candidatesByPerson: Record<string, { candidate_id: string; office: string; state: string; district: string }[]> = {};
 
         if (personIdList.length > 0) {
           const { data: candidateData } = await browserClient
             .from("candidates")
-            .select("candidate_id, person_id, office, state, district, cycle")
+            .select("candidate_id, person_id, office, state, district")
             .in("person_id", personIdList);
 
           // Group candidates by person_id
@@ -317,10 +316,9 @@ export function HomePage() {
         }
 
         const personResults: EntityResult[] = persons?.map((row) => {
-          // Get the most recent candidate_id for this person (prefer 2026, then 2024)
+          // Get the first candidate_id for this person
           const candidates = candidatesByPerson[row.person_id] || [];
-          const sortedCandidates = [...candidates].sort((a, b) => (b.cycle || 0) - (a.cycle || 0));
-          const latestCandidate = sortedCandidates[0];
+          const latestCandidate = candidates[0];
 
           return {
             type: "person" as const,
@@ -338,9 +336,8 @@ export function HomePage() {
         // Also search candidates table directly as fallback (for candidates not linked to political_persons)
         const { data: directCandidates, error: candidatesError } = await browserClient
           .from("candidates")
-          .select("candidate_id, name, party, office, state, district, cycle")
+          .select("candidate_id, name, party, office, state, district")
           .ilike("name", `%${trimmed}%`)
-          .order("cycle", { ascending: false })
           .limit(8);
 
         if (candidatesError) {

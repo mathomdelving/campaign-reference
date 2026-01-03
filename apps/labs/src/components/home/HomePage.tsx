@@ -206,9 +206,7 @@ export function HomePage() {
         const nameParts = person.label.split(' ');
         const lastName = nameParts[nameParts.length - 1];
 
-        console.log(`[Home] Looking up candidate for person: ${person.label}, lastName: ${lastName}, state: ${person.state}`);
-
-        // Search by last name only (state filter was too restrictive)
+        // Search by last name only
         const { data: candidates, error } = await browserClient
           .from("candidates")
           .select("candidate_id, name, office, state, district")
@@ -216,11 +214,8 @@ export function HomePage() {
           .limit(10);
 
         if (error) {
-          console.error(`[Home] Error looking up candidate for ${person.label}:`, error);
           continue;
         }
-
-        console.log(`[Home] Found ${candidates?.length || 0} candidates for ${lastName}:`, candidates?.map(c => c.name));
 
         if (candidates && candidates.length > 0) {
           // Try to find best match - prefer same state if available
@@ -232,8 +227,6 @@ export function HomePage() {
             }
           }
 
-          console.log(`[Home] Best match for ${person.label}: ${bestMatch.name} (${bestMatch.candidate_id})`);
-
           candidateMatches[person.id] = {
             candidate_id: bestMatch.candidate_id,
             office: bestMatch.office,
@@ -243,12 +236,7 @@ export function HomePage() {
         }
       }
 
-      if (Object.keys(candidateMatches).length === 0) {
-        console.log('[Home] No candidate matches found');
-        return;
-      }
-
-      console.log('[Home] Updating selectedEntities with candidate matches:', candidateMatches);
+      if (Object.keys(candidateMatches).length === 0) return;
 
       // Update selectedEntities with candidateId info
       setSelectedEntities((prev) =>

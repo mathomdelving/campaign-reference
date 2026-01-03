@@ -206,33 +206,50 @@ export function HomePage() {
         const nameParts = person.label.split(' ');
         const lastName = nameParts[nameParts.length - 1];
 
-        // Search by last name and optionally state for better matching
-        let query = browserClient
+        console.log(`[Home] Looking up candidate for person: ${person.label}, lastName: ${lastName}, state: ${person.state}`);
+
+        // Search by last name only (state filter was too restrictive)
+        const { data: candidates, error } = await browserClient
           .from("candidates")
           .select("candidate_id, name, office, state, district, cycle")
           .ilike("name", `%${lastName}%`)
           .order("cycle", { ascending: false })
-          .limit(5);
+          .limit(10);
 
-        // If we have state info, use it to narrow down
-        if (person.state) {
-          query = query.eq("state", person.state);
+        if (error) {
+          console.error(`[Home] Error looking up candidate for ${person.label}:`, error);
+          continue;
         }
 
-        const { data: candidates } = await query;
+        console.log(`[Home] Found ${candidates?.length || 0} candidates for ${lastName}:`, candidates?.map(c => c.name));
 
         if (candidates && candidates.length > 0) {
-          // Use the most recent candidate (first result due to ordering)
+          // Try to find best match - prefer same state if available
+          let bestMatch = candidates[0];
+          if (person.state) {
+            const sameStateMatch = candidates.find(c => c.state === person.state);
+            if (sameStateMatch) {
+              bestMatch = sameStateMatch;
+            }
+          }
+
+          console.log(`[Home] Best match for ${person.label}: ${bestMatch.name} (${bestMatch.candidate_id})`);
+
           candidateMatches[person.id] = {
-            candidate_id: candidates[0].candidate_id,
-            office: candidates[0].office,
-            state: candidates[0].state,
-            district: candidates[0].district,
+            candidate_id: bestMatch.candidate_id,
+            office: bestMatch.office,
+            state: bestMatch.state,
+            district: bestMatch.district,
           };
         }
       }
 
-      if (Object.keys(candidateMatches).length === 0) return;
+      if (Object.keys(candidateMatches).length === 0) {
+        console.log('[Home] No candidate matches found');
+        return;
+      }
+
+      console.log('[Home] Updating selectedEntities with candidate matches:', candidateMatches);
 
       // Update selectedEntities with candidateId info
       setSelectedEntities((prev) =>

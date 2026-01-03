@@ -292,7 +292,7 @@ export function NotificationSettingsView() {
                             ? 'cursor-wait opacity-60'
                             : 'cursor-pointer',
                           follow.ie_notification_enabled
-                            ? 'bg-rb-blue'
+                            ? 'bg-rb-red'
                             : 'bg-gray-200',
                         ].join(' ')}
                       >

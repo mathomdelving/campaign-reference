@@ -341,7 +341,7 @@ def fetch_committee_quarterly_filings(candidate_id, cycle, retry_count=0):
                 # ONLY exclude TERMINATION reports (candidates who shut down)
 
                 for filing in filings:
-                    report_type = filing.get('report_type_full', '')
+                    report_type = filing.get('report_type_full') or ''
 
                     # Skip termination reports only
                     if 'TERMINATION' in report_type.upper():

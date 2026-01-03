@@ -2,6 +2,12 @@
 .env
 frontend/.env
 
+# Gemini Agent Context
+.gemini/
+
+# Claude Agent Context
+.claude/
+
 # Python
 __pycache__/
 *.py[cod]

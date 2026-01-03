@@ -71,6 +71,15 @@ jobs:
           echo "Detecting new filings and queuing notifications..."
           python scripts/maintenance/detect_new_filings.py --once
 
+      - name: Detect independent expenditures and queue notifications
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
+        run: |
+          echo "Detecting new independent expenditures and queuing notifications..."
+          python scripts/maintenance/detect_ie_filings.py --once
+
       - name: Send email notifications
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

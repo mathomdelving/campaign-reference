@@ -103,6 +103,262 @@ def format_currency(amount):
     return f"${amount:,.0f}"
 
 
+def create_ie_email_html(filing_data, unsubscribe_url):
+    """
+    Create HTML email template for independent expenditure notifications.
+
+    Args:
+        filing_data: JSONB data from notification_queue (IE-specific fields)
+        unsubscribe_url: URL to unsubscribe page
+
+    Returns:
+        HTML string
+    """
+    candidate_name = filing_data.get('candidate_name', 'Unknown')
+    party = filing_data.get('party', '')
+    office = filing_data.get('office', '')
+    state = filing_data.get('state', '')
+    district = filing_data.get('district', '')
+
+    spender_name = filing_data.get('spender_name', 'Unknown Committee')
+    amount = filing_data.get('amount', 0)
+    support_oppose = filing_data.get('support_oppose', '')
+    purpose = filing_data.get('purpose', '')
+    expenditure_date = filing_data.get('expenditure_date', '')
+
+    # Determine support/oppose display
+    if support_oppose == 'S':
+        so_label = 'SUPPORTING'
+        so_color = '#059669'  # Green
+        so_bg = '#ecfdf5'
+    else:
+        so_label = 'OPPOSING'
+        so_color = '#dc2626'  # Red
+        so_bg = '#fef2f2'
+
+    # Format office display
+    office_upper = (office or '').upper()
+    clean_district = district if district and district not in ('00', '0', '') else None
+
+    if office_upper in ('H', 'HOUSE'):
+        office_display = f"U.S. House - {state}-{clean_district}" if clean_district else f"U.S. House - {state}"
+    elif office_upper in ('S', 'SENATE'):
+        office_display = f"U.S. Senate - {state}"
+    elif office_upper in ('P', 'PRESIDENT'):
+        office_display = "U.S. President"
+    else:
+        office_display = f"{office} - {state}" if state else (office or "Unknown Office")
+
+    # Determine party color
+    party_colors = {
+        'REPUBLICAN': '#E81B23',
+        'DEMOCRATIC': '#0015BC',
+        'LIBERTARIAN': '#FED105',
+        'GREEN': '#17aa5c',
+    }
+    party_color = party_colors.get((party or '').upper(), '#666666')
+
+    html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Independent Expenditure Alert</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 30px 40px; border-bottom: 1px solid #e5e5e5;">
+                            <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #1a1a1a;">
+                                Independent Expenditure Alert
+                            </h1>
+                            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666666;">
+                                {datetime.now().strftime('%B %d, %Y')}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Amount Banner -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: {so_bg};">
+                            <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: {so_color}; text-transform: uppercase; letter-spacing: 1px;">
+                                {so_label}
+                            </p>
+                            <p style="margin: 0; font-size: 42px; font-weight: 700; color: {so_color}; font-family: 'Courier New', monospace;">
+                                {format_currency(amount)}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Candidate Info -->
+                    <tr>
+                        <td style="padding: 30px 40px;">
+                            <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #666666; text-transform: uppercase; letter-spacing: 0.5px;">
+                                Targeting
+                            </p>
+                            <div style="display: inline-block; padding: 4px 12px; background-color: {party_color}15; border-radius: 12px; margin-bottom: 8px;">
+                                <span style="font-size: 12px; font-weight: 600; color: {party_color}; text-transform: uppercase;">
+                                    {party}
+                                </span>
+                            </div>
+                            <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700; color: #1a1a1a;">
+                                {candidate_name}
+                            </h2>
+                            <p style="margin: 0; font-size: 16px; color: #666666;">
+                                {office_display}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Spender Details -->
+                    <tr>
+                        <td style="padding: 0 40px 30px 40px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden;">
+                                <tr>
+                                    <td style="padding: 20px; border-bottom: 1px solid #e5e5e5;">
+                                        <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #666666; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            Spent By
+                                        </p>
+                                        <p style="margin: 0; font-size: 18px; font-weight: 600; color: #1a1a1a;">
+                                            {spender_name}
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 20px; border-bottom: 1px solid #e5e5e5;">
+                                        <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #666666; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            Purpose
+                                        </p>
+                                        <p style="margin: 0; font-size: 16px; color: #1a1a1a;">
+                                            {purpose or 'Not specified'}
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #666666; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            Expenditure Date
+                                        </p>
+                                        <p style="margin: 0; font-size: 16px; color: #1a1a1a;">
+                                            {expenditure_date or 'Not specified'}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Button -->
+                    <tr>
+                        <td style="padding: 0 40px 30px 40px;" align="center">
+                            <a href="https://campaign-reference.com" style="display: inline-block; padding: 14px 32px; background-color: #1a1a1a; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 600;">
+                                View All Outside Spending
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e5e5;">
+                            <p style="margin: 0 0 12px 0; font-size: 14px; color: #666666;">
+                                You're receiving this because you're watching <strong>{candidate_name}</strong> on Campaign Reference and have outside spending alerts enabled.
+                            </p>
+                            <p style="margin: 0; font-size: 12px; color: #999999;">
+                                <a href="{unsubscribe_url}" style="color: #999999; text-decoration: underline;">
+                                    Unsubscribe from IE alerts for this candidate
+                                </a>
+                                &nbsp;|&nbsp;
+                                <a href="https://campaign-reference.com/settings" style="color: #999999; text-decoration: underline;">
+                                    Manage notification settings
+                                </a>
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+
+                <!-- Legal Footer -->
+                <table width="600" cellpadding="0" cellspacing="0" style="margin-top: 20px;">
+                    <tr>
+                        <td style="padding: 0 40px; text-align: center;">
+                            <p style="margin: 0; font-size: 11px; color: #999999; line-height: 1.5;">
+                                Campaign Reference | Independent expenditure data from the Federal Election Commission<br>
+                                © {datetime.now().year} Campaign Reference. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+    return html
+
+
+def create_ie_email_text(filing_data):
+    """Create plain text version of IE email"""
+    candidate_name = filing_data.get('candidate_name', 'Unknown')
+    party = filing_data.get('party', '')
+    office = filing_data.get('office', '')
+    state = filing_data.get('state', '')
+    district = filing_data.get('district', '')
+
+    spender_name = filing_data.get('spender_name', 'Unknown Committee')
+    amount = filing_data.get('amount', 0)
+    support_oppose = filing_data.get('support_oppose', '')
+    purpose = filing_data.get('purpose', '')
+    expenditure_date = filing_data.get('expenditure_date', '')
+
+    so_label = "SUPPORTING" if support_oppose == 'S' else "OPPOSING"
+
+    # Format office display
+    office_upper = (office or '').upper()
+    clean_district = district if district and district not in ('00', '0', '') else None
+
+    if office_upper in ('H', 'HOUSE'):
+        office_display = f"U.S. House - {state}-{clean_district}" if clean_district else f"U.S. House - {state}"
+    elif office_upper in ('S', 'SENATE'):
+        office_display = f"U.S. Senate - {state}"
+    elif office_upper in ('P', 'PRESIDENT'):
+        office_display = "U.S. President"
+    else:
+        office_display = f"{office} - {state}" if state else (office or "Unknown Office")
+
+    text = f"""
+INDEPENDENT EXPENDITURE ALERT - {datetime.now().strftime('%B %d, %Y')}
+
+{format_currency(amount)} spent {so_label}
+
+{candidate_name} ({party})
+{office_display}
+
+EXPENDITURE DETAILS:
+--------------------
+Spent By:    {spender_name}
+Purpose:     {purpose or 'Not specified'}
+Date:        {expenditure_date or 'Not specified'}
+
+View all outside spending: https://campaign-reference.com
+
+---
+You're receiving this because you're watching {candidate_name} on Campaign Reference.
+Manage your notification settings: https://campaign-reference.com/settings
+
+Campaign Reference | Data from the Federal Election Commission
+© {datetime.now().year} Campaign Reference. All rights reserved.
+"""
+    return text
+
+
 def create_email_html(filing_data, unsubscribe_url):
     """
     Create professional HTML email template
@@ -481,14 +737,24 @@ def process_notifications(dry_run=False, limit=None):
         filing_data = notification['filing_data']
         candidate_name = filing_data.get('candidate_name', 'Unknown')
         retry_count = notification.get('retry_count', 0)
+        notification_type = notification.get('notification_type', 'filing')
 
-        print(f"\n  [{idx}/{len(notifications)}] {candidate_name} → User {user_id[:8]}...")
+        # Display different label for IE notifications
+        if notification_type == 'ie':
+            amount = filing_data.get('amount', 0)
+            so = filing_data.get('support_oppose', 'O')
+            so_label = 'FOR' if so == 'S' else 'AGAINST'
+            display_label = f"IE: ${amount:,.0f} {so_label} {candidate_name}"
+        else:
+            display_label = candidate_name
+
+        print(f"\n  [{idx}/{len(notifications)}] {display_label} → User {user_id[:8]}...")
 
         # Get user email
         user_email = get_user_email(user_id)
         if not user_email:
             print(f"    ✗ Could not fetch user email")
-            errors.append(f"{candidate_name} → {user_id}: No email found")
+            errors.append(f"{display_label} → {user_id}: No email found")
 
             # Mark as failed if we've retried enough times
             if retry_count >= MAX_RETRIES - 1:
@@ -498,14 +764,24 @@ def process_notifications(dry_run=False, limit=None):
 
         print(f"    Email: {user_email}")
 
-        # Create unsubscribe URL (will implement proper unsubscribe page later)
+        # Create unsubscribe URL
         candidate_id = filing_data.get('candidate_id', '')
         unsubscribe_url = f"https://campaign-reference.com/unsubscribe?user={user_id}&candidate={candidate_id}"
 
-        # Create email content
-        subject = f"New Filing: {candidate_name}"
-        html_content = create_email_html(filing_data, unsubscribe_url)
-        text_content = create_email_text(filing_data)
+        # Create email content based on notification type
+        if notification_type == 'ie':
+            # Independent expenditure notification
+            amount = filing_data.get('amount', 0)
+            so = filing_data.get('support_oppose', 'O')
+            so_label = 'FOR' if so == 'S' else 'AGAINST'
+            subject = f"IE Alert: ${amount:,.0f} spent {so_label} {candidate_name}"
+            html_content = create_ie_email_html(filing_data, unsubscribe_url)
+            text_content = create_ie_email_text(filing_data)
+        else:
+            # Campaign filing notification (default)
+            subject = f"New Filing: {candidate_name}"
+            html_content = create_email_html(filing_data, unsubscribe_url)
+            text_content = create_email_text(filing_data)
 
         # Send email
         success, error_msg = send_email_via_sendgrid(

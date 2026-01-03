@@ -15,6 +15,7 @@ interface CandidateFollow {
   office: string | null;
   party: string | null;
   notification_enabled: boolean;
+  ie_notification_enabled: boolean;
 }
 
 export function NotificationSettingsView() {
@@ -76,6 +77,35 @@ export function NotificationSettingsView() {
       );
     } catch (err) {
       console.error('Error toggling notification:', err);
+      alert('Failed to update notification settings.');
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const toggleIENotification = async (
+    candidateId: string,
+    currentValue: boolean,
+  ) => {
+    if (!user) return;
+    setSaving(`ie-${candidateId}`);
+    try {
+      const { error } = await supabase
+        .from('user_candidate_follows')
+        .update({ ie_notification_enabled: !currentValue })
+        .eq('user_id', user.id)
+        .eq('candidate_id', candidateId);
+
+      if (error) throw error;
+      setFollows((prev) =>
+        prev.map((follow) =>
+          follow.candidate_id === candidateId
+            ? { ...follow, ie_notification_enabled: !currentValue }
+            : follow,
+        ),
+      );
+    } catch (err) {
+      console.error('Error toggling IE notification:', err);
       alert('Failed to update notification settings.');
     } finally {
       setSaving(null);
@@ -178,7 +208,10 @@ export function NotificationSettingsView() {
                     Office
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Email Notifications
+                    Campaign Filings
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Outside Spending
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
                     Actions
@@ -241,7 +274,39 @@ export function NotificationSettingsView() {
                         />
                       </button>
                       <div className="mt-1 text-xs text-gray-500">
-                        {follow.notification_enabled ? 'Enabled' : 'Disabled'}
+                        {follow.notification_enabled ? 'On' : 'Off'}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-center">
+                      <button
+                        onClick={() =>
+                          toggleIENotification(
+                            follow.candidate_id,
+                            follow.ie_notification_enabled,
+                          )
+                        }
+                        disabled={saving === `ie-${follow.candidate_id}`}
+                        className={[
+                          'relative inline-flex h-6 w-11 items-center rounded-full transition',
+                          saving === `ie-${follow.candidate_id}`
+                            ? 'cursor-wait opacity-60'
+                            : 'cursor-pointer',
+                          follow.ie_notification_enabled
+                            ? 'bg-rb-blue'
+                            : 'bg-gray-200',
+                        ].join(' ')}
+                      >
+                        <span
+                          className={[
+                            'inline-block h-4 w-4 transform rounded-full bg-white transition',
+                            follow.ie_notification_enabled
+                              ? 'translate-x-6'
+                              : 'translate-x-1',
+                          ].join(' ')}
+                        />
+                      </button>
+                      <div className="mt-1 text-xs text-gray-500">
+                        {follow.ie_notification_enabled ? 'On' : 'Off'}
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-center">

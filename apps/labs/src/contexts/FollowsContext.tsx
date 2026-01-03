@@ -87,6 +87,7 @@ export function FollowsProvider({ children }: { children: React.ReactNode }) {
       state: candidateData.state,
       district: candidateData.district,
       notification_enabled: true,
+      ie_notification_enabled: true,
     });
 
     if (error) throw error;

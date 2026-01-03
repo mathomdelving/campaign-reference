@@ -275,7 +275,7 @@ def fetch_committee_quarterly_filings(candidate_id, cycle, retry_count=0):
             return ([], "server", error_msg)
 
         # Rate limit after committees call (targeting 6000 req/hour)
-        time.sleep(0.6)
+        time.sleep(0.1)
 
         committees = committees_response.json().get('results', [])
         all_filings = []
@@ -294,7 +294,7 @@ def fetch_committee_quarterly_filings(candidate_id, cycle, retry_count=0):
             }, timeout=30)
 
             # Rate limit after history call (targeting 6000 req/hour)
-            time.sleep(0.6)
+            time.sleep(0.1)
 
             # Default to current designation if history call fails
             designation = committee.get('designation')
@@ -326,7 +326,7 @@ def fetch_committee_quarterly_filings(candidate_id, cycle, retry_count=0):
             }, timeout=30)
 
             # Rate limit after filings call (targeting 6000 req/hour)
-            time.sleep(0.6)
+            time.sleep(0.1)
 
             if filings_response.ok:
                 filings = filings_response.json().get('results', [])
@@ -397,7 +397,7 @@ def process_candidate(candidate, cycle, progress):
 
     # Fetch summary data (totals) - 1 API call
     financial_data, fin_error_type, fin_error_msg = fetch_candidate_financials(candidate_id, cycle)
-    time.sleep(0.6)  # Rate limit: targeting 6000 req/hour
+    time.sleep(0.1)  # Rate limit: targeting 6000 req/hour
 
     if fin_error_type:
         # This is an actual error - mark for retry
@@ -536,9 +536,9 @@ def main():
     print(f"\n\nSTEP 2: Fetching financial data (summary + quarterly)...")
     print(f"{'='*60}")
     print(f"Rate limit: 7,000 requests/hour (targeting 6,000 to leave headroom)")
-    print(f"Processing with 0.6 second delay between API calls")
+    print(f"Processing with 0.1 second delay between API calls")
     print(f"Each candidate: 3+ API calls (totals + committees + filings)")
-    print(f"  = ~2-3 seconds per candidate")
+    print(f"  = ~2 seconds per candidate")
     print(f"Estimated time: ~{len(all_candidates) * 2.5 / 3600:.1f} hours for {len(all_candidates)} candidates")
     print(f"{'='*60}\n")
 

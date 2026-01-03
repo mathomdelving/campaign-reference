@@ -177,3 +177,59 @@ LIMIT 10;
 All committees MUST map to a candidate:
 - If a candidate does not exist, create it BEFORE loading committee data
 - This ensures proper query flow: `political_person → candidates → quarterly_financials → committees`
+
+---
+
+## Database Architecture - CRITICAL
+
+**The financial data lives in TWO separate tables. DO NOT attempt to merge them.**
+
+### financial_summary
+- **Purpose:** Cumulative YTD totals for the **leaderboard**
+- **Data type:** Running totals (e.g., "$5M raised this cycle")
+- **Source:** FEC `/candidate/{id}/totals/` endpoint
+- **Updated by:** `scripts/data-loading/incremental_update.py`
+- **Used by:** `leaderboard_data` view, leaderboard pages
+
+### candidate_financials (formerly quarterly_financials)
+- **Purpose:** Individual period breakdowns for **charts**
+- **Data type:** Per-filing amounts (e.g., "$500K raised in Q3")
+- **Source:** FEC `/reports/house-senate/` endpoint
+- **Updated by:** `scripts/data-loading/update_quarterly_financials.py`
+- **Used by:** Quarterly charts, filing history, trend analysis
+
+### Why They're Separate
+
+| Aspect | financial_summary | candidate_financials |
+|--------|------------------|---------------------|
+| Amount type | Cumulative YTD | Period-only |
+| Sum behavior | Latest = total | Sum = total |
+| Use case | "Who raised most?" | "When did they raise it?" |
+
+**WARNING:** If you SUM `financial_summary`, you get wrong totals (double/triple counting). If you take MAX of `candidate_financials`, you get wrong totals (just one quarter).
+
+### Update Pipeline (GitHub Actions)
+
+Both tables are updated by the same workflow (`incremental-update.yml`):
+
+1. `incremental_update.py` → updates `financial_summary` (cumulative)
+2. `update_quarterly_financials.py` → updates `candidate_financials` (periods)
+3. `detect_new_filings.py` → queues notifications
+4. `send_notifications.py` → sends emails
+
+### Quick Verification
+
+```sql
+-- Check cumulative totals (leaderboard source)
+SELECT candidate_id, total_receipts, coverage_end_date
+FROM financial_summary
+WHERE cycle = 2026
+ORDER BY total_receipts DESC
+LIMIT 5;
+
+-- Check period breakdowns (chart source)
+SELECT candidate_id, report_type, total_receipts, coverage_end_date
+FROM candidate_financials
+WHERE cycle = 2026 AND candidate_id = 'H6TX22126'
+ORDER BY coverage_end_date;
+```

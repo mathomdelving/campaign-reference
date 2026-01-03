@@ -182,6 +182,77 @@ export function HomePage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Track which person IDs we've already tried to fetch candidate info for
+  const fetchedPersonIds = useRef<Set<string>>(new Set());
+
+  // Fetch candidate info for persons missing candidateId (needed for follow functionality)
+  useEffect(() => {
+    const personsNeedingCandidateId = selectedEntities.filter(
+      (e) => e.type === "person" && !e.candidateId && !fetchedPersonIds.current.has(e.id)
+    );
+
+    if (personsNeedingCandidateId.length === 0) return;
+
+    // Mark these as fetched to prevent re-fetching
+    personsNeedingCandidateId.forEach((p) => fetchedPersonIds.current.add(p.id));
+
+    (async () => {
+      // Look up candidates by name for persons missing candidateId
+      // Names might be in different formats: "John Fetterman" vs "FETTERMAN, JOHN"
+      const candidateMatches: Record<string, { candidate_id: string; office: string; state: string; district: string }> = {};
+
+      for (const person of personsNeedingCandidateId) {
+        // Extract last name for searching (handles "First Last" format)
+        const nameParts = person.label.split(' ');
+        const lastName = nameParts[nameParts.length - 1];
+
+        // Search by last name and optionally state for better matching
+        let query = browserClient
+          .from("candidates")
+          .select("candidate_id, name, office, state, district, cycle")
+          .ilike("name", `%${lastName}%`)
+          .order("cycle", { ascending: false })
+          .limit(5);
+
+        // If we have state info, use it to narrow down
+        if (person.state) {
+          query = query.eq("state", person.state);
+        }
+
+        const { data: candidates } = await query;
+
+        if (candidates && candidates.length > 0) {
+          // Use the most recent candidate (first result due to ordering)
+          candidateMatches[person.id] = {
+            candidate_id: candidates[0].candidate_id,
+            office: candidates[0].office,
+            state: candidates[0].state,
+            district: candidates[0].district,
+          };
+        }
+      }
+
+      if (Object.keys(candidateMatches).length === 0) return;
+
+      // Update selectedEntities with candidateId info
+      setSelectedEntities((prev) =>
+        prev.map((entity) => {
+          if (entity.type === "person" && !entity.candidateId && candidateMatches[entity.id]) {
+            const match = candidateMatches[entity.id];
+            return {
+              ...entity,
+              candidateId: match.candidate_id,
+              office: match.office,
+              state: match.state,
+              district: match.district,
+            };
+          }
+          return entity;
+        })
+      );
+    })();
+  }, [selectedEntities]);
+
   // Search effect
   useEffect(() => {
     if (searchTerm.trim().length < 2) {

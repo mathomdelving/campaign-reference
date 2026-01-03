@@ -196,18 +196,10 @@ export function HomePage() {
       try {
         const trimmed = searchTerm.trim();
 
-        // Search political_persons with linked candidate info for following
+        // Search political_persons first
         const { data: persons, error: personsError } = await browserClient
           .from("political_persons")
-          .select(`
-            person_id,
-            display_name,
-            party,
-            state,
-            district,
-            current_office,
-            candidates(candidate_id, office, state, district, cycle)
-          `)
+          .select("person_id, display_name, party, state, district, current_office")
           .ilike("display_name", `%${trimmed}%`)
           .limit(8);
 
@@ -215,9 +207,30 @@ export function HomePage() {
           console.error('[Home Search] Persons query error:', personsError);
         }
 
+        // Get person IDs to fetch their candidate records
+        const personIdList = persons?.map(p => p.person_id) || [];
+
+        // Fetch candidates linked to these persons (for follow functionality)
+        let candidatesByPerson: Record<string, { candidate_id: string; office: string; state: string; district: string; cycle: number }[]> = {};
+
+        if (personIdList.length > 0) {
+          const { data: candidateData } = await browserClient
+            .from("candidates")
+            .select("candidate_id, person_id, office, state, district, cycle")
+            .in("person_id", personIdList);
+
+          // Group candidates by person_id
+          candidateData?.forEach((c) => {
+            if (!candidatesByPerson[c.person_id]) {
+              candidatesByPerson[c.person_id] = [];
+            }
+            candidatesByPerson[c.person_id].push(c);
+          });
+        }
+
         const personResults: EntityResult[] = persons?.map((row) => {
           // Get the most recent candidate_id for this person (prefer 2026, then 2024)
-          const candidates = row.candidates || [];
+          const candidates = candidatesByPerson[row.person_id] || [];
           const sortedCandidates = [...candidates].sort((a, b) => (b.cycle || 0) - (a.cycle || 0));
           const latestCandidate = sortedCandidates[0];
 

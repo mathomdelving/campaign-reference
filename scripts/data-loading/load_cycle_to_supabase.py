@@ -25,6 +25,7 @@ import os
 import sys
 import argparse
 import time
+import re
 from datetime import datetime
 from dotenv import load_dotenv
 import requests
@@ -37,6 +38,133 @@ SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 if not all([SUPABASE_URL, SUPABASE_KEY]):
     print("ERROR: Missing SUPABASE_URL or SUPABASE_KEY in environment")
     sys.exit(1)
+
+
+def generate_person_id(name, state):
+    """
+    Generate a person_id from candidate name and state.
+    Format: firstname-lastname-state (lowercase, hyphenated)
+    Example: "OSSOFF, JON" + "GA" -> "jon-ossoff-ga"
+    """
+    if not name or not state:
+        return None
+
+    # Parse name (usually "LASTNAME, FIRSTNAME MIDDLE")
+    name = name.strip()
+    if ',' in name:
+        parts = name.split(',', 1)
+        last_name = parts[0].strip()
+        first_name = parts[1].strip().split()[0] if len(parts) > 1 else ''
+    else:
+        # No comma, try to split by space
+        parts = name.split()
+        first_name = parts[0] if parts else ''
+        last_name = parts[-1] if len(parts) > 1 else ''
+
+    # Clean and format
+    first_name = re.sub(r'[^a-zA-Z]', '', first_name).lower()
+    last_name = re.sub(r'[^a-zA-Z]', '', last_name).lower()
+    state = state.lower()
+
+    if first_name and last_name:
+        return f"{first_name}-{last_name}-{state}"
+    elif last_name:
+        return f"{last_name}-{state}"
+    return None
+
+
+def get_existing_candidates():
+    """Fetch all existing candidate_ids from the database."""
+    headers = {
+        'apikey': SUPABASE_KEY,
+        'Authorization': f'Bearer {SUPABASE_KEY}'
+    }
+
+    existing = set()
+    offset = 0
+    while True:
+        r = requests.get(
+            f'{SUPABASE_URL}/rest/v1/candidates?select=candidate_id&limit=1000&offset={offset}',
+            headers=headers
+        )
+        data = r.json()
+        if not data:
+            break
+        existing.update(c['candidate_id'] for c in data)
+        offset += 1000
+
+    return existing
+
+
+def get_existing_persons():
+    """Fetch all existing person_ids from the database."""
+    headers = {
+        'apikey': SUPABASE_KEY,
+        'Authorization': f'Bearer {SUPABASE_KEY}'
+    }
+
+    existing = set()
+    offset = 0
+    while True:
+        r = requests.get(
+            f'{SUPABASE_URL}/rest/v1/political_persons?select=person_id&limit=1000&offset={offset}',
+            headers=headers
+        )
+        data = r.json()
+        if not data:
+            break
+        existing.update(p['person_id'] for p in data)
+        offset += 1000
+
+    return existing
+
+
+def create_political_persons(new_candidates, existing_persons, dry_run=False):
+    """Create political_persons entries for new candidates."""
+    persons_to_create = []
+    person_id_map = {}  # candidate_id -> person_id
+
+    for candidate in new_candidates:
+        person_id = generate_person_id(
+            candidate.get('name'),
+            candidate.get('state')
+        )
+
+        if not person_id:
+            continue
+
+        person_id_map[candidate['candidate_id']] = person_id
+
+        # Only create if doesn't exist
+        if person_id not in existing_persons:
+            persons_to_create.append({
+                'person_id': person_id,
+                'display_name': candidate.get('name'),
+                'party': candidate.get('party_full'),
+                'state': candidate.get('state'),
+                'district': candidate.get('district'),
+                'current_office': candidate.get('office'),
+                'is_incumbent': candidate.get('incumbent_challenge') == 'I',
+                'created_at': datetime.now().isoformat(),
+                'updated_at': datetime.now().isoformat()
+            })
+            existing_persons.add(person_id)  # Prevent duplicates in same batch
+
+    if persons_to_create:
+        print(f"  Creating {len(persons_to_create)} new political_persons entries")
+        if not dry_run:
+            inserted, errors = upsert_batch(
+                'political_persons',
+                persons_to_create,
+                'person_id',
+                dry_run=dry_run
+            )
+            if errors:
+                print(f"  Errors creating political_persons: {errors[:3]}")
+    else:
+        print(f"  No new political_persons entries needed")
+
+    return person_id_map
 
 
 def load_json_file(filename):
@@ -94,13 +222,25 @@ def upsert_batch(table_name, records, on_conflict, batch_size=500, dry_run=False
     return inserted, errors
 
 
-def transform_candidates(candidates_data, cycle):
-    """Transform candidate JSON to database format."""
-    transformed = []
+def transform_candidates(candidates_data, cycle, person_id_map=None, existing_candidates=None):
+    """Transform candidate JSON to database format.
+
+    Returns two lists:
+    - new_candidates: with person_id (for insertion)
+    - existing_candidates_update: without person_id (for update)
+
+    Supabase requires all objects in a batch to have same keys, so we split them.
+    """
+    new_candidates = []
+    existing_candidates_update = []
+    person_id_map = person_id_map or {}
+    existing_candidates = existing_candidates or set()
 
     for candidate in candidates_data:
-        transformed.append({
-            'candidate_id': candidate['candidate_id'],
+        candidate_id = candidate['candidate_id']
+
+        base_record = {
+            'candidate_id': candidate_id,
             'name': candidate.get('name'),
             'party': candidate.get('party_full'),
             'state': candidate.get('state'),
@@ -108,16 +248,50 @@ def transform_candidates(candidates_data, cycle):
             'office': candidate.get('office'),
             'incumbent_challenge': candidate.get('incumbent_challenge'),
             'updated_at': datetime.now().isoformat()
-        })
+        }
 
-    return transformed
+        if candidate_id not in existing_candidates:
+            # New candidate - include person_id
+            base_record['person_id'] = person_id_map.get(candidate_id)
+            new_candidates.append(base_record)
+        else:
+            # Existing candidate - don't touch person_id
+            existing_candidates_update.append(base_record)
+
+    return new_candidates, existing_candidates_update
 
 
 def transform_financials(financials_data, cycle):
-    """Transform financial summary JSON to database format."""
-    transformed = []
+    """Transform financial summary JSON to database format.
+
+    Deduplicates by (candidate_id, cycle, coverage_end_date) - keeps the record
+    with the highest total_receipts (most complete data).
+    """
+    # First, deduplicate the data
+    seen = {}  # key -> record
 
     for record in financials_data:
+        candidate_id = record.get('candidate_id')
+        coverage_end = record.get('coverage_end_date')
+
+        key = (candidate_id, cycle, coverage_end)
+
+        if key not in seen:
+            seen[key] = record
+        else:
+            # Keep the one with higher total_receipts (more complete)
+            existing_receipts = seen[key].get('total_receipts') or 0
+            new_receipts = record.get('total_receipts') or 0
+            if new_receipts > existing_receipts:
+                seen[key] = record
+
+    if len(seen) < len(financials_data):
+        print(f"  Removed {len(financials_data) - len(seen)} duplicate records")
+
+    # Now transform the deduplicated data
+    transformed = []
+
+    for record in seen.values():
         # Extract report_year from coverage_end_date if not present
         report_year = record.get('last_report_year')
         if not report_year and record.get('coverage_end_date'):
@@ -143,10 +317,38 @@ def transform_financials(financials_data, cycle):
 
 
 def transform_quarterly(quarterly_data, cycle):
-    """Transform quarterly financials JSON to candidate_financials format."""
-    transformed = []
+    """Transform quarterly financials JSON to candidate_financials format.
+
+    Deduplicates by (candidate_id, cycle, coverage_end_date) - keeps the record
+    with the highest total_receipts (most complete data).
+    """
+    # First, deduplicate the data
+    seen = {}  # key -> record
 
     for record in quarterly_data:
+        candidate_id = record.get('candidate_id')
+        coverage_end = record.get('coverage_end_date')
+        if coverage_end and 'T' in coverage_end:
+            coverage_end = coverage_end.split('T')[0]
+
+        key = (candidate_id, cycle, coverage_end)
+
+        if key not in seen:
+            seen[key] = record
+        else:
+            # Keep the one with higher total_receipts (more complete)
+            existing_receipts = seen[key].get('total_receipts') or 0
+            new_receipts = record.get('total_receipts') or 0
+            if new_receipts > existing_receipts:
+                seen[key] = record
+
+    if len(seen) < len(quarterly_data):
+        print(f"  Removed {len(quarterly_data) - len(seen)} duplicate records")
+
+    # Now transform the deduplicated data
+    transformed = []
+
+    for record in seen.values():
         # Parse filing_id - handle both numeric and string formats
         filing_id = record.get('filing_id')
         if isinstance(filing_id, str) and filing_id.startswith('FEC-'):
@@ -239,6 +441,7 @@ def main():
 
     all_errors = []
     total_inserted = 0
+    person_id_map = {}
 
     # Load candidates (unless quarterly-only)
     if not args.quarterly_only:
@@ -247,16 +450,57 @@ def main():
         candidates_data = load_json_file(candidates_file)
 
         if candidates_data:
-            candidates_transformed = transform_candidates(candidates_data, cycle)
-            inserted, errors = upsert_batch(
-                'candidates',
-                candidates_transformed,
-                'candidate_id',
-                dry_run=dry_run
+            # Get existing candidates and persons from database
+            print(f"  Fetching existing candidates from database...")
+            existing_candidates = get_existing_candidates()
+            print(f"  Found {len(existing_candidates)} existing candidates")
+
+            print(f"  Fetching existing political_persons from database...")
+            existing_persons = get_existing_persons()
+            print(f"  Found {len(existing_persons)} existing persons")
+
+            # Identify new candidates
+            new_candidates = [c for c in candidates_data if c['candidate_id'] not in existing_candidates]
+            print(f"  New candidates to add: {len(new_candidates)}")
+
+            # Create political_persons entries for new candidates
+            if new_candidates:
+                print(f"\n--- Creating Political Persons ---")
+                person_id_map = create_political_persons(new_candidates, existing_persons, dry_run)
+
+            # Transform candidates into two batches
+            new_candidates_batch, existing_candidates_batch = transform_candidates(
+                candidates_data, cycle, person_id_map, existing_candidates
             )
-            all_errors.extend(errors)
-            total_inserted += inserted
-            print(f"  Result: {inserted} candidates")
+
+            print(f"  New candidates to insert: {len(new_candidates_batch)}")
+            print(f"  Existing candidates to update: {len(existing_candidates_batch)}")
+
+            # Insert new candidates (with person_id)
+            if new_candidates_batch:
+                print(f"  Inserting new candidates...")
+                inserted, errors = upsert_batch(
+                    'candidates',
+                    new_candidates_batch,
+                    'candidate_id',
+                    dry_run=dry_run
+                )
+                all_errors.extend(errors)
+                total_inserted += inserted
+                print(f"  New candidates inserted: {inserted}")
+
+            # Update existing candidates (without person_id)
+            if existing_candidates_batch:
+                print(f"  Updating existing candidates...")
+                inserted, errors = upsert_batch(
+                    'candidates',
+                    existing_candidates_batch,
+                    'candidate_id',
+                    dry_run=dry_run
+                )
+                all_errors.extend(errors)
+                total_inserted += inserted
+                print(f"  Existing candidates updated: {inserted}")
 
     # Load financial summary (unless quarterly-only)
     if not args.quarterly_only:

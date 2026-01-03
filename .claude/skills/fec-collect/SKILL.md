@@ -52,8 +52,50 @@ python3 -c "import json; print(f'{len(json.load(open(\"quarterly_financials_{cyc
 ### Step 3: Load to Supabase
 
 ```bash
-python3 scripts/data-loading/load_to_supabase.py
+python3 scripts/data-loading/load_cycle_to_supabase.py --cycle <YEAR>
+
+# Options:
+#   --dry-run        Preview without writing
+#   --quarterly-only Load only quarterly data (skip candidates/financial_summary)
+#   --skip-quarterly Load candidates + financial_summary only
 ```
+
+**Tables Updated:**
+- `candidates` (upsert by candidate_id)
+- `financial_summary` (upsert by candidate_id, cycle, coverage_end_date)
+- `candidate_financials` (upsert by candidate_id, cycle, coverage_end_date)
+
+---
+
+## Historical Backfill (2018, 2020, etc.)
+
+To backfill data for older cycles:
+
+```bash
+# Step 1: Collect (5-8 hours per cycle, run in background)
+nohup python3 -u scripts/collect_cycle_data.py --cycle 2020 --max-retries 3 > collection_2020.log 2>&1 &
+nohup python3 -u scripts/collect_cycle_data.py --cycle 2018 --max-retries 3 > collection_2018.log 2>&1 &
+
+# Monitor progress
+tail -f collection_2020.log
+
+# Step 2: Review JSON files when complete
+ls -lh *_2020.json *_2018.json
+
+# Step 3: Load to Supabase (do one cycle at a time)
+python3 scripts/data-loading/load_cycle_to_supabase.py --cycle 2020
+python3 scripts/data-loading/load_cycle_to_supabase.py --cycle 2018
+```
+
+**Current Coverage:**
+
+| Cycle | financial_summary | candidate_financials |
+|-------|-------------------|---------------------|
+| 2026  | ✓ 3,157           | ✓ 6,621             |
+| 2024  | ✓ 3,568           | ✓ 23,459            |
+| 2022  | ✓ 3,412           | ✓ 23,094            |
+| 2020  | ✓ 1,642           | ✗ 0 (needs backfill)|
+| 2018  | ✓ 2,465           | ✗ 0 (needs backfill)|
 
 ---
 
@@ -157,7 +199,9 @@ LIMIT 10;
 | Purpose | Location |
 |---------|----------|
 | Collection script | `scripts/collect_cycle_data.py` |
-| Loading script | `scripts/data-loading/load_to_supabase.py` |
+| Loading script (any cycle) | `scripts/data-loading/load_cycle_to_supabase.py` |
+| Incremental update | `scripts/data-loading/incremental_update.py` |
+| Quarterly update | `scripts/data-loading/update_quarterly_financials.py` |
 | Progress tracking | `progress_{cycle}_robust.json` |
 | Output JSON files | Project root (`*.json`) |
 
@@ -182,54 +226,99 @@ All committees MUST map to a candidate:
 
 ## Database Architecture - CRITICAL
 
-**The financial data lives in TWO separate tables. DO NOT attempt to merge them.**
+### Entity Relationship Diagram
 
-### financial_summary
-- **Purpose:** Cumulative YTD totals for the **leaderboard**
-- **Data type:** Running totals (e.g., "$5M raised this cycle")
-- **Source:** FEC `/candidate/{id}/totals/` endpoint
-- **Updated by:** `scripts/data-loading/incremental_update.py`
-- **Used by:** `leaderboard_data` view, leaderboard pages
+```
+political_persons (1) ←──── (many) candidates (1) ←──── (many) committee_designations
+       │                           │                              │
+       │                           │                              │
+       │ person_id                 │ candidate_id                 │ committee_id
+       │                           │                              │
+       ▼                           ▼                              ▼
+  Display names             financial_summary              candidate_financials
+  across cycles             (cumulative totals)            (period breakdowns)
+                                   │
+                                   ▼
+                            leaderboard_data (VIEW)
+```
 
-### candidate_financials (formerly quarterly_financials)
-- **Purpose:** Individual period breakdowns for **charts**
-- **Data type:** Per-filing amounts (e.g., "$500K raised in Q3")
-- **Source:** FEC `/reports/house-senate/` endpoint
-- **Updated by:** `scripts/data-loading/update_quarterly_financials.py`
-- **Used by:** Quarterly charts, filing history, trend analysis
+### Core Tables
 
-### Why They're Separate
+| Table | Purpose | Primary Key | Updated By |
+|-------|---------|-------------|------------|
+| `political_persons` | Deduplicated person identities across election cycles | `person_id` | Manual/bulk scripts |
+| `candidates` | Candidate info for a specific cycle | `candidate_id` | `incremental_update.py` |
+| `committee_designations` | Maps committee_id → candidate_id | `committee_id, candidate_id` | Bulk collection |
+| `financial_summary` | **Cumulative YTD totals** for leaderboard | `candidate_id, cycle, coverage_end_date` | `incremental_update.py` |
+| `candidate_financials` | **Period breakdowns** for charts | `candidate_id, cycle, coverage_end_date` | `update_quarterly_financials.py` |
+
+### Views
+
+| View | Purpose | Source Tables |
+|------|---------|---------------|
+| `leaderboard_data` | Pre-joined data for leaderboard pages | `financial_summary` + `candidates` + `political_persons` |
+
+### The Two Financial Tables - DO NOT MERGE
 
 | Aspect | financial_summary | candidate_financials |
 |--------|------------------|---------------------|
-| Amount type | Cumulative YTD | Period-only |
-| Sum behavior | Latest = total | Sum = total |
-| Use case | "Who raised most?" | "When did they raise it?" |
+| **Purpose** | Leaderboard rankings | Quarterly charts |
+| **Amount type** | Cumulative YTD | Period-only |
+| **FEC endpoint** | `/candidate/{id}/totals/` | `/reports/house-senate/` |
+| **Sum behavior** | Latest record = total | SUM all records = total |
+| **Example** | "$5M raised this cycle" | "$500K raised in Q3" |
 
-**WARNING:** If you SUM `financial_summary`, you get wrong totals (double/triple counting). If you take MAX of `candidate_financials`, you get wrong totals (just one quarter).
+**WARNING:**
+- If you SUM `financial_summary`, you get wrong totals (double/triple counting)
+- If you take MAX of `candidate_financials`, you get wrong totals (just one quarter)
+
+### Common Joins
+
+```sql
+-- Get candidate with their display name and financials
+SELECT
+    pp.display_name,
+    c.party,
+    c.state,
+    c.district,
+    fs.total_receipts,
+    fs.cash_on_hand
+FROM candidates c
+JOIN political_persons pp ON c.person_id = pp.person_id
+JOIN financial_summary fs ON c.candidate_id = fs.candidate_id
+WHERE fs.cycle = 2026;
+
+-- Get quarterly breakdown for a candidate
+SELECT
+    c.name,
+    cf.report_type,
+    cf.coverage_end_date,
+    cf.total_receipts
+FROM candidates c
+JOIN candidate_financials cf ON c.candidate_id = cf.candidate_id
+WHERE c.candidate_id = 'H6TX22126'
+ORDER BY cf.coverage_end_date;
+
+-- Look up candidate from committee
+SELECT c.*
+FROM committee_designations cd
+JOIN candidates c ON cd.candidate_id = c.candidate_id
+WHERE cd.committee_id = 'C00123456';
+```
+
+### Notification System Tables
+
+| Table | Purpose |
+|-------|---------|
+| `user_candidate_follows` | Which candidates a user follows (has `notification_enabled` flag) |
+| `notification_queue` | Pending/sent/failed email notifications |
+| `data_refresh_log` | Tracks when data was last updated |
 
 ### Update Pipeline (GitHub Actions)
 
-Both tables are updated by the same workflow (`incremental-update.yml`):
+The `incremental-update.yml` workflow runs these in order:
 
-1. `incremental_update.py` → updates `financial_summary` (cumulative)
-2. `update_quarterly_financials.py` → updates `candidate_financials` (periods)
-3. `detect_new_filings.py` → queues notifications
-4. `send_notifications.py` → sends emails
-
-### Quick Verification
-
-```sql
--- Check cumulative totals (leaderboard source)
-SELECT candidate_id, total_receipts, coverage_end_date
-FROM financial_summary
-WHERE cycle = 2026
-ORDER BY total_receipts DESC
-LIMIT 5;
-
--- Check period breakdowns (chart source)
-SELECT candidate_id, report_type, total_receipts, coverage_end_date
-FROM candidate_financials
-WHERE cycle = 2026 AND candidate_id = 'H6TX22126'
-ORDER BY coverage_end_date;
-```
+1. `incremental_update.py` → updates `candidates` + `financial_summary`
+2. `update_quarterly_financials.py` → updates `candidate_financials`
+3. `detect_new_filings.py` → creates entries in `notification_queue`
+4. `send_notifications.py` → sends emails, updates queue status

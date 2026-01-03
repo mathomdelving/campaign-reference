@@ -192,9 +192,9 @@ export function CommitteeView() {
     [selectedEntities]
   );
 
-  const { data: personQuarterlies } = usePersonQuarterlyData(personIds, [2022, 2024, 2026]);
-  const { data: candidateQuarterlies } = useQuarterlyData(candidateIds, [2022, 2024, 2026]);
-  const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, [2022, 2024, 2026]);
+  const { data: personQuarterlies } = usePersonQuarterlyData(personIds, [2020, 2022, 2024, 2026]);
+  const { data: candidateQuarterlies } = useQuarterlyData(candidateIds, [2020, 2022, 2024, 2026]);
+  const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, [2020, 2022, 2024, 2026]);
 
   // chartDataWithKeys keeps sortKey for filtering, chartData is the clean output
   const { chartDataWithKeys, chartData, quarterlyTicks } = useMemo(() => {

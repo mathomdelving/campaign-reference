@@ -167,9 +167,9 @@ export function HomePage() {
   );
 
   // Data hooks
-  const { data: personQuarterlies } = usePersonQuarterlyData(personIds, [2022, 2024, 2026]);
-  const { data: candidateQuarterlies } = useQuarterlyData(candidateIds, [2022, 2024, 2026]);
-  const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, [2022, 2024, 2026]);
+  const { data: personQuarterlies } = usePersonQuarterlyData(personIds, [2020, 2022, 2024, 2026]);
+  const { data: candidateQuarterlies } = useQuarterlyData(candidateIds, [2020, 2022, 2024, 2026]);
+  const { data: committeeQuarterlies } = useCommitteeQuarterlyData(committeeIds, [2020, 2022, 2024, 2026]);
 
   // Handle click outside search results
   useEffect(() => {

@@ -18,7 +18,7 @@ const US_STATES = [
   "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "DC",
 ];
 
-const CYCLES = [2026, 2024, 2022];
+const CYCLES = [2026, 2024, 2022, 2020];
 
 const PARTY_OPTIONS: MultiSelectOption[] = [
   { value: "democrat", label: "Democratic" },

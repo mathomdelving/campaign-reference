@@ -247,13 +247,44 @@ export function HomePage() {
           };
         }) ?? [];
 
+        // Also search candidates table directly as fallback (for candidates not linked to political_persons)
+        const { data: directCandidates, error: candidatesError } = await browserClient
+          .from("candidates")
+          .select("candidate_id, name, party, office, state, district, cycle")
+          .ilike("name", `%${trimmed}%`)
+          .order("cycle", { ascending: false })
+          .limit(8);
+
+        if (candidatesError) {
+          console.error('[Home Search] Candidates query error:', candidatesError);
+        }
+
+        // Create candidate results, excluding those already found via political_persons
+        const personCandidateIds = new Set(personResults.map(p => p.candidateId).filter(Boolean));
+        const candidateResults: EntityResult[] = (directCandidates || [])
+          .filter(c => !personCandidateIds.has(c.candidate_id))
+          .map((row) => ({
+            type: "candidate" as const,
+            id: row.candidate_id,
+            label: row.name,
+            party: row.party,
+            state: row.state,
+            district: row.district,
+            office: row.office,
+            candidateId: row.candidate_id,
+            subtitle: [row.party, row.state, row.office === 'H' ? `District ${row.district}` : 'Senate'].filter(Boolean).join(' · '),
+          }));
+
         // Check for committee matches
         const committeeMatches = QUICK_COMMITTEES.filter((entity) =>
           entity.label.toLowerCase().includes(searchTerm.toLowerCase())
         ).map((entity) => ({ ...entity, subtitle: "Committee" }));
 
         if (!cancelled) {
-          const combined = [...committeeMatches, ...personResults];
+          // Combine: committees first, then persons with candidateIds, then direct candidates, then persons without candidateIds
+          const personsWithCandidates = personResults.filter(p => p.candidateId);
+          const personsWithoutCandidates = personResults.filter(p => !p.candidateId);
+          const combined = [...committeeMatches, ...personsWithCandidates, ...candidateResults, ...personsWithoutCandidates];
           setSearchResults(combined.slice(0, 8));
           setShowResults(true);
         }
@@ -604,8 +635,8 @@ export function HomePage() {
                       <div className="text-sm text-gray-500">{result.subtitle}</div>
                     </div>
                   </button>
-                  {/* Only show follow button if we have a valid candidate_id */}
-                  {(result.type === 'committee' || result.candidateId) && (
+                  {/* Show follow button for candidates and persons with linked candidates */}
+                  {(result.type === 'candidate' || result.candidateId) && (
                     <FollowButton
                       candidateId={result.candidateId || result.id}
                       candidateName={result.label}

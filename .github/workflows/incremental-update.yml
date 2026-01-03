@@ -49,6 +49,19 @@ jobs:
             python scripts/data-loading/incremental_update.py
           fi
 
+      - name: Update quarterly financials
+        env:
+          FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          echo "Updating quarterly financial reports..."
+          if [ -n "${{ github.event.inputs.lookback_days }}" ]; then
+            python scripts/data-loading/update_quarterly_financials.py --lookback ${{ github.event.inputs.lookback_days }}
+          else
+            python scripts/data-loading/update_quarterly_financials.py
+          fi
+
       - name: Detect new filings and queue notifications
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

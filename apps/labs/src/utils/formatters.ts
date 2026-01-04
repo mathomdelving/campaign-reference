@@ -75,11 +75,11 @@ export function getPartyColor(party?: string | null) {
   if (!party) return "#7F8FA4";
 
   const normalized = party.toUpperCase();
-  if (normalized.includes("DEMOCRAT")) return "#5B8AEF";
-  if (normalized.includes("REPUBLICAN")) return "#E06A6A";
-  if (normalized.includes("INDEPENDENT")) return "#F4B400";
-  if (normalized.includes("LIBERTARIAN")) return "#F59E0B";
-  if (normalized.includes("GREEN")) return "#10B981";
+  if (normalized.includes("DEMOCRAT") || normalized === "DEM") return "#5B8AEF";
+  if (normalized.includes("REPUBLICAN") || normalized === "REP") return "#E06A6A";
+  if (normalized.includes("INDEPENDENT") || normalized === "IND") return "#F4B400";
+  if (normalized.includes("LIBERTARIAN") || normalized === "LIB") return "#F59E0B";
+  if (normalized.includes("GREEN") || normalized === "GRE") return "#10B981";
 
   return "#7F8FA4";
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFollows } from "@/contexts/FollowsContext";
+import { useToast } from "@/contexts/ToastContext";
 
 type FollowButtonSize = "sm" | "md" | "lg";
 
@@ -37,6 +38,7 @@ export function FollowButton({
 }: FollowButtonProps) {
   const { user } = useAuth();
   const { isFollowing: checkIsFollowing, addFollow, removeFollow } = useFollows();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
@@ -68,7 +70,7 @@ export function FollowButton({
     } catch (err) {
       console.error("Error updating follow status:", err);
       const message = err instanceof Error ? err.message : "Failed to update follow status. Please try again.";
-      alert(message);
+      showToast(message, 'error');
     } finally {
       setLoading(false);
     }

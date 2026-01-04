@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import { supabase } from '@/lib/supabaseClient';
 import { getPartyColor } from '@/utils/formatters';
 
@@ -21,6 +22,7 @@ interface CandidateFollow {
 export function NotificationSettingsView() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { showToast } = useToast();
   const [follows, setFollows] = useState<CandidateFollow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export function NotificationSettingsView() {
       setFollows((data ?? []) as CandidateFollow[]);
     } catch (err) {
       console.error('Error fetching follows:', err);
-      alert('Unable to load notification settings right now.');
+      showToast('Unable to load notification settings right now.', 'error');
     } finally {
       setLoading(false);
     }
@@ -77,7 +79,7 @@ export function NotificationSettingsView() {
       );
     } catch (err) {
       console.error('Error toggling notification:', err);
-      alert('Failed to update notification settings.');
+      showToast('Failed to update notification settings.', 'error');
     } finally {
       setSaving(null);
     }
@@ -106,7 +108,7 @@ export function NotificationSettingsView() {
       );
     } catch (err) {
       console.error('Error toggling IE notification:', err);
-      alert('Failed to update notification settings.');
+      showToast('Failed to update notification settings.', 'error');
     } finally {
       setSaving(null);
     }
@@ -128,7 +130,7 @@ export function NotificationSettingsView() {
       );
     } catch (err) {
       console.error('Error unfollowing candidate:', err);
-      alert('Failed to unfollow candidate.');
+      showToast('Failed to unfollow candidate.', 'error');
     }
   };
 

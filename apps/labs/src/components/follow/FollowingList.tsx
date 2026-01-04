@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import { supabase } from '@/lib/supabaseClient';
 import { getPartyColor } from '@/utils/formatters';
 
@@ -22,6 +23,7 @@ interface FollowingListProps {
 
 export function FollowingList({ onClose }: FollowingListProps) {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [follows, setFollows] = useState<CandidateFollow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +40,7 @@ export function FollowingList({ onClose }: FollowingListProps) {
       setFollows((data ?? []) as CandidateFollow[]);
     } catch (err) {
       console.error('Error fetching follows:', err);
-      alert('Unable to load your watch list right now.');
+      showToast('Unable to load your watch list right now.', 'error');
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,7 @@ export function FollowingList({ onClose }: FollowingListProps) {
       );
     } catch (err) {
       console.error('Error unfollowing candidate:', err);
-      alert('Failed to unfollow candidate. Please try again.');
+      showToast('Failed to unfollow candidate. Please try again.', 'error');
     }
   };
 
@@ -83,7 +85,7 @@ export function FollowingList({ onClose }: FollowingListProps) {
       setFollows([]);
     } catch (err) {
       console.error('Error clearing watch list:', err);
-      alert('Failed to clear watch list. Please try again.');
+      showToast('Failed to clear watch list. Please try again.', 'error');
     }
   };
 
@@ -109,7 +111,7 @@ export function FollowingList({ onClose }: FollowingListProps) {
       );
     } catch (err) {
       console.error('Error toggling notifications:', err);
-      alert('Failed to update notification settings. Please try again.');
+      showToast('Failed to update notification settings. Please try again.', 'error');
     }
   };
 

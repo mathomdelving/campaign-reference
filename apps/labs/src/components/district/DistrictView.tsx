@@ -11,6 +11,7 @@ import { CRLineChart } from "@/components/CRLineChart";
 import { getPartyColor } from "@/utils/formatters";
 import type { ChartDatum, ChartSeriesConfig } from "@/components/CRLineChart";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { supabase } from "@/lib/supabaseClient";
 import { getChartColor } from "@/lib/chartTheme";
 import { sortQuarterLabels, getDisplayLabel } from "@/utils/quarters";
@@ -32,6 +33,7 @@ export function DistrictView() {
   const [watchingAll, setWatchingAll] = useState(false);
 
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const { districts } = useDistrictOptions(state, chamber, cycle);
   const {
@@ -282,12 +284,12 @@ export function DistrictView() {
 
   const handleWatchAll = async () => {
     if (!user) {
-      alert("Please sign in to watch candidates.");
+      showToast("Please sign in to watch candidates.", "info");
       return;
     }
 
     if (sortedCandidates.length === 0) {
-      alert("No candidates available to watch for the current selection.");
+      showToast("No candidates available to watch for the current selection.", "info");
       return;
     }
 
@@ -308,7 +310,7 @@ export function DistrictView() {
       const remainingSlots = 50 - currentCount;
 
       if (remainingSlots <= 0) {
-        alert("You have reached the maximum of 50 followed candidates.");
+        showToast("You have reached the maximum of 50 followed candidates.", "warning");
         setWatchingAll(false);
         return;
       }
@@ -318,7 +320,7 @@ export function DistrictView() {
         .slice(0, remainingSlots);
 
       if (candidatesToWatch.length === 0) {
-        alert("You are already watching these candidates.");
+        showToast("You are already watching these candidates.", "info");
         setWatchingAll(false);
         return;
       }
@@ -355,10 +357,10 @@ export function DistrictView() {
 
       if (error) throw error;
 
-      alert(`Successfully watching ${candidatesToWatch.length} candidates.`);
+      showToast(`Successfully watching ${candidatesToWatch.length} candidates.`, "success");
     } catch (err) {
       console.error("Error following candidates in bulk:", err);
-      alert("Failed to watch all candidates. Please try again.");
+      showToast("Failed to watch all candidates. Please try again.", "error");
     } finally {
       setWatchingAll(false);
     }

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Libre_Baskerville } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { FollowsProvider } from "@/contexts/FollowsContext";
+import { ToastProvider } from "@/contexts/ToastContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./globals.css";
 
 const inter = Inter({
@@ -59,7 +61,11 @@ export default function RootLayout({
       >
         <AuthProvider>
           <FollowsProvider>
-            {children}
+            <ToastProvider>
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
+            </ToastProvider>
           </FollowsProvider>
         </AuthProvider>
       </body>

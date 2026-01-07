@@ -5,8 +5,9 @@ frontend/.env
 # Gemini Agent Context
 .gemini/
 
-# Claude Agent Context
-.claude/
+# Claude Agent Context (ignore settings, keep skills)
+.claude/*
+!.claude/skills/
 
 # Python
 __pycache__/

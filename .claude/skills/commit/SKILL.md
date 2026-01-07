@@ -2,6 +2,7 @@
 name: commit
 description: Safe commit workflow - creates a feature branch, commits changes, and opens a PR for review. Use when you've made code changes and want to commit them safely. NEVER commits directly to main.
 allowed-tools: Bash, Read, Grep, Glob
+version: 1.0.0
 ---
 
 # Safe Commit Skill

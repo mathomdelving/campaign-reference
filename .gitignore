@@ -65,3 +65,6 @@ verify_*.js
 test_frontend_query.js
 test_nm_senate.js
 test_mike_johnson.js
+
+# Downloaded external data (re-download via scripts if needed)
+legislators.yaml

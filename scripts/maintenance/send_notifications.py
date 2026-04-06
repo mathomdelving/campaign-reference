@@ -687,25 +687,47 @@ def update_notification_status(notification_id, status, error_message=None, incr
 
     try:
         response = requests.patch(url, headers=headers, params=params, json=update_data)
+        if response.status_code not in [200, 204]:
+            print(f"    Status update failed ({response.status_code}): {response.text[:200]}")
         return response.status_code in [200, 204]
-    except:
+    except Exception as e:
+        print(f"    Error updating notification status: {e}")
         return False
 
 
 def increment_retry_count(notification_id):
-    """Increment retry_count for a notification"""
-    # Use RPC or direct SQL would be ideal, but we'll do a read-modify-write
-    url = f"{SUPABASE_URL}/rest/v1/rpc/increment_notification_retry"
+    """Increment retry_count for a notification via direct PATCH"""
+    # First, fetch current retry_count
+    fetch_url = f"{SUPABASE_URL}/rest/v1/notification_queue"
     headers = {
         'apikey': SUPABASE_KEY,
         'Authorization': f'Bearer {SUPABASE_KEY}',
         'Content-Type': 'application/json'
     }
 
-    # Since we may not have this RPC function, let's just update directly
-    # We'll fetch current count and increment
-    # For simplicity, we'll skip this for now and handle in the main loop
-    pass
+    try:
+        response = requests.get(
+            fetch_url,
+            headers=headers,
+            params={'id': f'eq.{notification_id}', 'select': 'retry_count'}
+        )
+        if response.status_code != 200 or not response.json():
+            print(f"    Failed to fetch retry_count for {notification_id}")
+            return False
+
+        current_count = response.json()[0].get('retry_count', 0)
+
+        # Now increment it
+        patch_response = requests.patch(
+            fetch_url,
+            headers=headers,
+            params={'id': f'eq.{notification_id}'},
+            json={'retry_count': current_count + 1}
+        )
+        return patch_response.status_code in [200, 204]
+    except Exception as e:
+        print(f"    Error incrementing retry count: {e}")
+        return False
 
 
 def process_notifications(dry_run=False, limit=None):
@@ -836,7 +858,7 @@ def main():
         if arg.startswith('--limit'):
             try:
                 limit = int(sys.argv[sys.argv.index(arg) + 1])
-            except:
+            except (ValueError, IndexError):
                 pass
 
     if dry_run:

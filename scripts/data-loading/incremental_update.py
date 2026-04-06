@@ -339,8 +339,11 @@ def upsert_candidate(record):
 
     try:
         response = requests.post(url, headers=headers, json=record)
+        if response.status_code not in [200, 201, 204]:
+            print(f"    Candidate upsert failed ({response.status_code}): {response.text[:200]}")
         return response.status_code in [200, 201, 204]
-    except:
+    except Exception as e:
+        print(f"    Error upserting candidate: {e}")
         return False
 
 
@@ -356,8 +359,11 @@ def upsert_financial(record):
 
     try:
         response = requests.post(url, headers=headers, json=record)
+        if response.status_code not in [200, 201, 204]:
+            print(f"    Financial upsert failed ({response.status_code}): {response.text[:200]}")
         return response.status_code in [200, 201, 204]
-    except:
+    except Exception as e:
+        print(f"    Error upserting financial record: {e}")
         return False
 
 
@@ -405,7 +411,7 @@ def main():
         if arg.startswith('--lookback'):
             try:
                 lookback_days = int(sys.argv[sys.argv.index(arg) + 1])
-            except:
+            except (ValueError, IndexError):
                 pass
 
     # Determine lookback date

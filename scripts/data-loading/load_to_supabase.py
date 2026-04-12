@@ -63,11 +63,6 @@ def transform_candidates(candidates_data):
     transformed = []
 
     for candidate in candidates_data:
-        # Get cycle from cycles array - use the LATEST cycle (2026 for our data)
-        # Incumbents may have multiple cycles, we want the most recent
-        cycles = candidate.get('cycles', [])
-        cycle = max(cycles) if cycles else None
-
         transformed.append({
             'candidate_id': candidate['candidate_id'],
             'name': candidate['name'],
@@ -75,7 +70,6 @@ def transform_candidates(candidates_data):
             'state': candidate.get('state'),
             'district': candidate.get('district'),
             'office': candidate.get('office'),  # Already 'H' or 'S'
-            'cycle': cycle
         })
     return transformed
 

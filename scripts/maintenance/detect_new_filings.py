@@ -54,27 +54,29 @@ SENDGRID_FROM_NAME = os.getenv('SENDGRID_FROM_NAME')
 
 # Configuration
 POLL_INTERVAL_SECONDS = 30  # How often to check for new filings (optimized for 7k/hour)
-MAX_FILINGS_PER_CHECK = 100  # Limit results per API call
+MAX_FILINGS_PER_PAGE = 100  # Results per API call
+MAX_PAGES_TO_FETCH = 20  # Max pages to fetch (2000 filings) - covers peak filing days
 
 def get_dynamic_lookback_hours():
     """
     Dynamically adjust lookback based on FEC filing calendar.
 
     Filing deadlines (quarterly reports):
-    - Jan 15: Q4/Year-End (covering Oct 1 - Dec 31)
+    - Jan 31: Q4/Year-End (covering Oct 1 - Dec 31)
     - Apr 15: Q1 (covering Jan 1 - Mar 31)
     - Jul 15: Q2 (covering Apr 1 - Jun 30)
     - Oct 15: Q3 (covering Jul 1 - Sep 30)
 
+    IMPORTANT: We use longer lookbacks than you might expect because:
+    1. FEC API can have delays in processing filings
+    2. We need to catch filings even if a workflow run is missed
+    3. Pagination now fetches more data, so longer lookbacks are feasible
+
     Strategy:
-    - Filing deadline days (13th-16th): Short lookback (2 hours)
-      High volume, checking frequently, want fast response
-    - Days around deadlines (10th-12th, 17th-20th): Medium lookback (6 hours)
-      Moderate volume, some early/late filers
-    - Primary season (Mar 1 - Sep 30): Medium lookback (12 hours)
-      Primaries vary by state, steady trickle of filings
-    - Quiet periods: Long lookback (48 hours)
-      Low volume, resilience matters more than speed
+    - Filing deadline window (Jan 28-Feb 5, Apr 12-20, Jul 12-20, Oct 12-20):
+      Use 168 hours (7 days) to catch all deadline filings
+    - Primary season (Mar 1 - Sep 30): 72 hours (3 days)
+    - Quiet periods: 72 hours (3 days) minimum for resilience
 
     Returns:
         int: Number of hours to look back
@@ -85,35 +87,28 @@ def get_dynamic_lookback_hours():
     month = now.month
     day = now.day
 
-    # Quarterly filing months
-    filing_months = [1, 4, 7, 10]  # Jan, Apr, Jul, Oct
+    # Year-End filing window (Jan 28 - Feb 5)
+    if (month == 1 and day >= 28) or (month == 2 and day <= 5):
+        return 168  # 7 days - critical Year-End period
 
-    # Check if we're in a filing month
-    if month in filing_months:
-        # Peak filing days (13th-16th): high volume
-        if 13 <= day <= 16:
-            return 2  # Short lookback, checking frequently
+    # Q1 filing window (Apr 12-20)
+    if month == 4 and 12 <= day <= 20:
+        return 168  # 7 days
 
-        # Shoulder days around deadline (10th-12th, 17th-20th)
-        elif 10 <= day <= 12 or 17 <= day <= 20:
-            return 6  # Medium lookback
+    # Q2 filing window (Jul 12-20)
+    if month == 7 and 12 <= day <= 20:
+        return 168  # 7 days
 
-        # Rest of filing month
-        else:
-            return 12  # Moderate lookback
+    # Q3 filing window (Oct 12-20)
+    if month == 10 and 12 <= day <= 20:
+        return 168  # 7 days
 
-    # Primary season (March through September)
-    # Various state primaries = steady trickle of pre/post-primary reports
-    elif 3 <= month <= 9:
-        # Check if we're near typical primary filing windows
-        # Pre-primary reports due ~12 days before election
-        # Post-primary reports due ~30 days after
-        # Use medium lookback during this busy season
-        return 12
+    # Primary season (March through September) - more frequent filings
+    if 3 <= month <= 9:
+        return 72  # 3 days
 
-    # Quiet periods (Nov, Dec, Feb, rest of filing months)
-    else:
-        return 48  # Long lookback for resilience
+    # Default: 72 hours minimum for resilience
+    return 72
 
 
 # Get initial lookback (will be recalculated on each check)
@@ -193,8 +188,8 @@ def resolve_candidate_from_committee(committee_id):
             results = response.json()
             if results:
                 return results[0]
-    except:
-        pass
+    except Exception as e:
+        print(f"    Warning: DB committee lookup failed: {e}")
 
     # Fall back to FEC API
     try:
@@ -213,8 +208,8 @@ def resolve_candidate_from_committee(committee_id):
                     'office': None,
                     'district': None
                 }
-    except:
-        pass
+    except Exception as e:
+        print(f"    Warning: FEC committee lookup failed for {committee_id}: {e}")
 
     return None
 
@@ -343,7 +338,7 @@ def store_filing_in_database(candidate_id, committee_id, filing_data, candidate_
     }
 
     # Add upsert conflict columns
-    url += "?on_conflict=candidate_id,cycle,coverage_end_date,is_amendment"
+    url += "?on_conflict=candidate_id,cycle,coverage_end_date,filing_id"
 
     payload = {
         'candidate_id': candidate_id,
@@ -383,7 +378,8 @@ def check_new_filings(since_date):
     """
     Check FEC API for new filings since the given date.
 
-    Uses the bulk /filings/ endpoint to get all new filings in one request.
+    Uses the bulk /filings/ endpoint with PAGINATION to fetch all filings.
+    Critical for filing days when 1000+ filings may be submitted.
     Enriches results with candidate_id if missing (via committee lookup).
 
     Args:
@@ -393,39 +389,59 @@ def check_new_filings(since_date):
         list: Filing records from FEC API, enriched with candidate info
     """
     url = "https://api.open.fec.gov/v1/filings/"
+    all_results = []
+    page = 1
 
-    params = {
-        'api_key': FEC_API_KEY,
-        'min_receipt_date': since_date,
-        'sort': '-receipt_date',  # Newest first
-        'per_page': MAX_FILINGS_PER_CHECK,
-        'form_type': ['F3', 'F3P'],  # Candidate committees only (not PACs/F3X)
-    }
+    while page <= MAX_PAGES_TO_FETCH:
+        params = {
+            'api_key': FEC_API_KEY,
+            'min_receipt_date': since_date,
+            'sort': '-receipt_date',  # Newest first
+            'per_page': MAX_FILINGS_PER_PAGE,
+            'page': page,
+            'form_type': ['F3', 'F3P'],  # Candidate committees only (not PACs/F3X)
+        }
 
-    try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
 
-        data = response.json()
-        results = data.get('results', [])
+            data = response.json()
+            results = data.get('results', [])
 
-        # Enrich filings that don't have candidate_id
-        for filing in results:
-            if not filing.get('candidate_id') and filing.get('committee_id'):
-                candidate_info = resolve_candidate_from_committee(filing['committee_id'])
-                if candidate_info:
-                    filing['candidate_id'] = candidate_info.get('candidate_id')
-                    filing['candidate_name'] = candidate_info.get('name')
-                    filing['party'] = candidate_info.get('party')
-                    filing['state'] = candidate_info.get('state')
-                    filing['office'] = candidate_info.get('office')
-                    filing['district'] = candidate_info.get('district')
+            if not results:
+                break
 
-        return results
+            all_results.extend(results)
 
-    except requests.exceptions.RequestException as e:
-        print(f"⚠️  Error fetching filings from FEC: {e}")
-        return []
+            # Check if we've fetched all pages
+            pagination = data.get('pagination', {})
+            total_pages = pagination.get('pages', 1)
+            if page >= total_pages:
+                break
+
+            page += 1
+            time.sleep(0.3)  # Rate limiting between pages
+
+        except requests.exceptions.RequestException as e:
+            print(f"⚠️  Error fetching filings page {page} from FEC: {e}")
+            break
+
+    print(f"   Fetched {len(all_results)} filings across {page} page(s)")
+
+    # Enrich filings that don't have candidate_id
+    for filing in all_results:
+        if not filing.get('candidate_id') and filing.get('committee_id'):
+            candidate_info = resolve_candidate_from_committee(filing['committee_id'])
+            if candidate_info:
+                filing['candidate_id'] = candidate_info.get('candidate_id')
+                filing['candidate_name'] = candidate_info.get('name')
+                filing['party'] = candidate_info.get('party')
+                filing['state'] = candidate_info.get('state')
+                filing['office'] = candidate_info.get('office')
+                filing['district'] = candidate_info.get('district')
+
+    return all_results
 
 
 def get_filing_financials(candidate_id, coverage_end_date):

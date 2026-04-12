@@ -9,7 +9,7 @@ load_dotenv()
 
 FEC_API_KEY = os.getenv('FEC_API_KEY')
 BASE_URL = "https://api.open.fec.gov/v1"
-CYCLE = 2022
+CYCLE = 2026
 PROGRESS_FILE = "progress.json"
 
 if not FEC_API_KEY:
@@ -147,7 +147,7 @@ def fetch_committee_quarterly_filings(candidate_id, cycle=CYCLE, retry_count=0):
             return []
 
         # Rate limit after committees call
-        time.sleep(4)
+        time.sleep(0.5)
 
         committees = committees_response.json().get('results', [])
         all_filings = []
@@ -171,7 +171,7 @@ def fetch_committee_quarterly_filings(candidate_id, cycle=CYCLE, retry_count=0):
             }, timeout=10)
 
             # Rate limit after filings call
-            time.sleep(4)
+            time.sleep(0.5)
 
             if filings_response.ok:
                 filings = filings_response.json().get('results', [])
@@ -256,11 +256,10 @@ def main():
     print(f"\nSTEP 2: Fetching financial data (summary + quarterly)...")
     print(f"{'='*60}")
     print(f"Rate limit: 7,000 requests/hour (upgraded December 2025)")
-    print(f"Processing with 4 second delay between API calls (conservative)")
+    print(f"Processing with 0.5s delay between API calls (7,000 req/hr limit)")
     print(f"Each candidate: 3 API calls (totals + committees + filings)")
-    print(f"  = 12 seconds per candidate (could reduce delays if needed)")
-    print(f"  = ~300 candidates/hour with current delays")
-    print(f"Note: Delays kept conservative for stability")
+    print(f"  = ~1.5 seconds per candidate")
+    print(f"  = ~2,400 candidates/hour (~7,200 req/hr with backoff headroom)")
     print(f"{'='*60}\n")
 
     total = len(all_candidates)
@@ -275,7 +274,7 @@ def main():
 
         # Fetch summary data (totals) - 1 API call
         financial_data = fetch_candidate_financials(candidate_id)
-        time.sleep(4)  # Rate limit: 4 seconds after totals call
+        time.sleep(0.5)  # Rate limit: 0.5s delay (7,000 req/hr limit)
 
         if financial_data:
             combined = {

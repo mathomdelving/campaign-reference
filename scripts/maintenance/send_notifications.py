@@ -826,6 +826,7 @@ def process_notifications(dry_run=False, limit=None):
             errors.append(f"{candidate_name} → {user_email}: {error_msg}")
 
             if not dry_run:
+                increment_retry_count(notification_id)
                 # If we've hit max retries, mark as failed permanently
                 if retry_count >= MAX_RETRIES - 1:
                     update_notification_status(notification_id, 'failed', error_msg)

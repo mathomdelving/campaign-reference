@@ -274,8 +274,8 @@ def check_existing_record(candidate_id, cycle, coverage_end_date):
         if response.status_code == 200:
             data = response.json()
             return data[0] if data else None
-    except:
-        pass
+    except Exception as e:
+        print(f"    Warning: check_existing_record failed: {e}")
 
     return None
 

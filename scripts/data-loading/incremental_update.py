@@ -110,7 +110,7 @@ def get_recent_filings(since_date, max_pages=10):
         params = {
             'api_key': FEC_API_KEY,
             'cycle': CYCLE,
-            'form_type': 'F3',  # House/Senate candidate reports
+            'form_type': ['F3', 'F3P'],  # House and Senate candidate reports
             'min_receipt_date': since_date,
             'sort': '-receipt_date',
             'per_page': 100,
@@ -296,7 +296,6 @@ def update_candidates_in_supabase(candidate_ids):
             'state': candidate_info.get('state'),
             'district': candidate_info.get('district'),
             'office': candidate_info.get('office'),
-            'cycle': CYCLE
         }
 
         if upsert_candidate(candidate_record):
